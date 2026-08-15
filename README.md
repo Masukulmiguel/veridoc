@@ -1,7 +1,8 @@
-<<<<<<< HEAD
-# veridoc
-=======
 # VeriDoc — Confiança Digital
+
+<p align="center">
+  <img src="public/logotipo.png" alt="Logotipo VeriDoc" width="420">
+</p>
 
 Plataforma de **emissão, assinatura e validação de documentos digitais**. As instituições
 registadas emitem documentos com proteção criptográfica (hash SHA-256 + assinatura RSA-2048),
@@ -145,4 +146,3 @@ instituições, QR/PDF e auditoria.
 | GET/PUT | `/api/institutions/me` | autenticado / `ADMIN` |
 | GET/POST/PUT/DELETE | `/api/users` · `/api/users/{id}` | `ADMIN` |
 | GET | `/api/dashboard` · `/api/audit` | autenticado / `ADMIN` |
->>>>>>> 619ceb6 (feat: VeriDoc - plataforma de emissão, assinatura e validação de documentos digitais)
