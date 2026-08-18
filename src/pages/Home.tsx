@@ -10,7 +10,6 @@ import {
   QrCode,
   ScanLine,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -91,21 +90,16 @@ export default function Home() {
           style={{ backgroundImage: 'url(/banner.jpg)' }}
         />
         <div className="pointer-events-none absolute inset-0 bg-navy-950/60" />
-        <div className="container-page relative grid items-center gap-12 py-20 lg:grid-cols-2 lg:py-28">
-          <div className="animate-fade-up">
-            <Badge tone="navy" className="mb-5 bg-primary-600/20 text-primary-300">
-              <Sparkles className="size-3.5" />
-              Plataforma de confiança digital
-            </Badge>
-            <h1 className="font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
-              Verifique a autenticidade de um documento{' '}
-              <span className="text-primary-400">em segundos</span>.
+        <div className="container-page relative flex items-center py-24 lg:py-32">
+          <div className="animate-fade-up max-w-2xl">
+            <h1 className="font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+              Documentos digitais{' '}
+              <span className="text-brand-cyan">verificáveis</span>
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-navy-300">
-              Com a VeriDoc, documentos digitais podem ser emitidos, assinados e verificados de
-              forma simples e segura.
+            <p className="mt-6 max-w-lg text-lg leading-relaxed text-navy-300">
+              Emita, assine e valide documentos com segurança e integridade garantidas.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Link to="/verificar">
                 <Button size="lg" leftIcon={<ScanLine className="size-5" />}>
                   Validar documento
@@ -118,84 +112,9 @@ export default function Home() {
                   className="border-white/20 bg-white/5 text-white hover:border-white/40 hover:bg-white/10"
                   rightIcon={<ArrowRight className="size-5" />}
                 >
-                  Emitir documentos
+                  Criar conta
                 </Button>
               </Link>
-            </div>
-            <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-navy-300">
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-success-500" />
-                Hash criptográfico
-              </span>
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-success-500" />
-                Assinatura digital
-              </span>
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-success-500" />
-                QR Code de validação
-              </span>
-            </div>
-          </div>
-
-          <div className="relative hidden justify-center lg:flex">
-            <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white p-6 shadow-elevated">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="size-5 text-success-600" />
-                  <p className="font-display text-sm font-semibold text-navy-900">
-                    Documento validado
-                  </p>
-                </div>
-                <Badge tone="success">
-                  <CheckCircle2 className="size-3.5" />
-                  Válido
-                </Badge>
-              </div>
-              <div className="mt-5 rounded-2xl border border-navy-100 bg-navy-50 p-5">
-                <p className="font-display text-base font-semibold text-navy-900">
-                  Certificado de Conclusão
-                </p>
-                <p className="mt-0.5 text-sm text-navy-500">Universidade de Demonstração</p>
-                <dl className="mt-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-navy-500">Número</dt>
-                    <dd className="font-medium text-navy-900">VD-2026-0001</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-navy-500">Emissão</dt>
-                    <dd className="font-medium text-navy-900">10/08/2026</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-navy-500">Assinatura</dt>
-                    <dd className="flex items-center gap-1 font-medium text-success-700">
-                      <Fingerprint className="size-3.5" /> Verificada
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-              <div className="mt-5 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-1">
-                  <div className="rounded-xl border border-navy-200 bg-white p-2 shadow-card">
-                    <svg viewBox="0 0 84 84" className="size-20">
-                      <rect width="84" height="84" fill="none" />
-                      <g fill="#0F172A">
-                        {Array.from({ length: 49 }).map((_, i) => {
-                          const row = Math.floor(i / 7)
-                          const col = i % 7
-                          const filled = [1, 5, 7, 9, 12, 16, 19, 25, 29, 31, 35, 39, 42, 47, 49].includes(i + 1)
-                          if (!filled) return null
-                          return <rect key={i} x={4 + col * 11} y={4 + row * 11} width={7} height={7} />
-                        })}
-                      </g>
-                    </svg>
-                  </div>
-                  <span className="text-xs font-medium text-navy-500">VD-2026-0001</span>
-                </div>
-              </div>
-              <p className="mt-4 text-center text-xs text-navy-400">
-                Valide o documento em veridoc.ao/verificar
-              </p>
             </div>
           </div>
         </div>

@@ -126,7 +126,7 @@ export async function buildDocumentPdf(doc: VeriDocument, verificationUrl: strin
   let logoHeight = 0
   let logoPixels: Uint8Array | null = null
   try {
-    const logo = await loadImageAsRgb('/logotipo.jpg')
+    const logo = await loadImageAsRgb('/logotipo.png')
     logoWidth = logo.width
     logoHeight = logo.height
     logoPixels = logo.pixels
