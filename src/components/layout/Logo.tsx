@@ -9,7 +9,7 @@ interface LogoProps {
 export function Logo({ to = '/', className }: LogoProps) {
   const mark = (
     <img
-      src="/logotipo.png"
+      src="/logotipo.jpg"
       alt=""
       aria-hidden="true"
       className="size-9 shrink-0 object-contain"

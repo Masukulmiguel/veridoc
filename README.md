@@ -1,7 +1,7 @@
 # VeriDoc — Confiança Digital
 
 <p align="center">
-  <img src="public/logotipo.png" alt="Logotipo VeriDoc" width="420">
+  <img src="public/logotipo.jpg" alt="Logotipo VeriDoc" width="420">
 </p>
 
 Plataforma de **emissão, assinatura e validação de documentos digitais**. As instituições
