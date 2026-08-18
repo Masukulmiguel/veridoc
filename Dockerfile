@@ -14,8 +14,8 @@ FROM python:3.13-slim
 # Install nginx and supervisor
 RUN apt-get update && apt-get install -y nginx supervisor && rm -rf /var/lib/apt/lists/*
 
-# Remove default nginx config
-RUN rm -f /etc/nginx/sites-enabled/default
+# Remove ALL default nginx configs
+RUN rm -rf /etc/nginx/sites-enabled /etc/nginx/conf.d/* /etc/nginx/nginx.conf
 
 # Setup backend
 WORKDIR /app/backend
@@ -23,11 +23,13 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
-# Setup frontend (nginx)
+# Setup frontend
 COPY --from=frontend-build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Setup supervisor to run both
+# Copy nginx config as the MAIN nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Setup supervisor
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
