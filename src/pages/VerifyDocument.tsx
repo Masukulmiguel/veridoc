@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { ScanLine } from 'lucide-react'
 import { useVerification } from '@/hooks/useVerification'
 import { getErrorMessage } from '@/services/api'
 import { Button } from '@/components/ui/Button'
@@ -8,9 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Alert } from '@/components/ui/Alert'
 import { Spinner } from '@/components/ui/Spinner'
-import { Badge } from '@/components/ui/Badge'
 import { VerificationResult } from '@/components/verification/VerificationResult'
-import { Logo } from '@/components/layout/Logo'
 
 export default function VerifyDocument() {
   const { codigo } = useParams<{ codigo: string }>()
@@ -46,15 +43,7 @@ export default function VerifyDocument() {
 
   return (
     <div className="min-h-screen bg-navy-50">
-      <header className="border-b border-navy-200 bg-white">
-        <div className="container-page flex h-16 items-center justify-between">
-          <Logo to="/" />
-          <Badge tone="primary">
-            <ScanLine className="size-3.5" />
-            Validação pública
-          </Badge>
-        </div>
-      </header>
+      <div className="pt-16">
 
       <main className="container-page flex flex-col items-center py-10 sm:py-16">
         <div className="w-full max-w-xl">
@@ -142,6 +131,7 @@ export default function VerifyDocument() {
           </p>
         </div>
       </main>
+      </div>
     </div>
   )
 }

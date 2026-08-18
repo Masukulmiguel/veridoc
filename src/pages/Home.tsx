@@ -13,6 +13,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { FadeIn } from '@/components/ui/FadeIn'
+import { Parallax } from '@/components/ui/Parallax'
 
 const STEPS = [
   {
@@ -122,30 +124,31 @@ export default function Home() {
 
       <section id="como-funciona" className="bg-white py-20 lg:py-24">
         <div className="container-page">
-          <div className="mx-auto max-w-2xl text-center">
-            <Badge tone="primary" className="mb-4">Como funciona</Badge>
-            <h2 className="font-display text-3xl font-bold tracking-tight text-navy-900">
-              Três passos para confiança total
-            </h2>
-            <p className="mt-3 text-navy-500">
-              Da emissão à validação, cada documento passa por um processo seguro e transparente.
-            </p>
-          </div>
+          <FadeIn>
+            <div className="mx-auto max-w-2xl text-center">
+              <Badge tone="primary" className="mb-4">Como funciona</Badge>
+              <h2 className="font-display text-3xl font-bold tracking-tight text-navy-900">
+                Três passos para confiança total
+              </h2>
+              <p className="mt-3 text-navy-500">
+                Da emissão à validação, cada documento passa por um processo seguro e transparente.
+              </p>
+            </div>
+          </FadeIn>
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {STEPS.map((step, index) => (
-              <div
-                key={step.title}
-                className="relative rounded-2xl border border-navy-200 bg-white p-7 shadow-card transition-shadow hover:shadow-card-hover"
-              >
-                <span className="absolute right-6 top-6 font-display text-4xl font-extrabold text-navy-100">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <div className="mb-5 flex size-12 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
-                  <step.icon className="size-6" />
+              <FadeIn key={step.title} delay={index * 150}>
+                <div className="relative rounded-2xl border border-navy-200 bg-white p-7 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
+                  <span className="absolute right-6 top-6 font-display text-4xl font-extrabold text-navy-100">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div className="mb-5 flex size-12 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                    <step.icon className="size-6" />
+                  </div>
+                  <h3 className="font-display text-lg font-semibold text-navy-900">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-navy-500">{step.description}</p>
                 </div>
-                <h3 className="font-display text-lg font-semibold text-navy-900">{step.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-navy-500">{step.description}</p>
-              </div>
+              </FadeIn>
             ))}
           </div>
         </div>
@@ -153,29 +156,30 @@ export default function Home() {
 
       <section id="beneficios" className="bg-navy-50 py-20 lg:py-24">
         <div className="container-page">
-          <div className="mx-auto max-w-2xl text-center">
-            <Badge tone="navy" className="mb-4">Benefícios</Badge>
-            <h2 className="font-display text-3xl font-bold tracking-tight text-navy-900">
-              Porquê a VeriDoc
-            </h2>
-            <p className="mt-3 text-navy-500">
-              Segurança e simplicidade para instituições e para quem recebe documentos.
-            </p>
-          </div>
+          <FadeIn>
+            <div className="mx-auto max-w-2xl text-center">
+              <Badge tone="navy" className="mb-4">Benefícios</Badge>
+              <h2 className="font-display text-3xl font-bold tracking-tight text-navy-900">
+                Porquê a VeriDoc
+              </h2>
+              <p className="mt-3 text-navy-500">
+                Segurança e simplicidade para instituições e para quem recebe documentos.
+              </p>
+            </div>
+          </FadeIn>
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {BENEFITS.map((benefit) => (
-              <div
-                key={benefit.title}
-                className="rounded-2xl border border-navy-200 bg-white p-7 shadow-card transition-shadow hover:shadow-card-hover"
-              >
-                <div className="mb-4 flex size-11 items-center justify-center rounded-xl bg-navy-900 text-white">
-                  <benefit.icon className="size-5.5" />
+            {BENEFITS.map((benefit, index) => (
+              <FadeIn key={benefit.title} delay={index * 100}>
+                <div className="rounded-2xl border border-navy-200 bg-white p-7 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
+                  <div className="mb-4 flex size-11 items-center justify-center rounded-xl bg-navy-900 text-white">
+                    <benefit.icon className="size-5.5" />
+                  </div>
+                  <h3 className="font-display text-base font-semibold text-navy-900">
+                    {benefit.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-navy-500">{benefit.description}</p>
                 </div>
-                <h3 className="font-display text-base font-semibold text-navy-900">
-                  {benefit.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-navy-500">{benefit.description}</p>
-              </div>
+              </FadeIn>
             ))}
           </div>
         </div>
@@ -183,118 +187,130 @@ export default function Home() {
 
       <section id="validar-documento" className="bg-white py-20 lg:py-24">
         <div className="container-page grid items-center gap-12 lg:grid-cols-2">
-          <div>
-            <Badge tone="success" className="mb-4">
-              <ScanLine className="size-3.5" />
-              Validação pública
-            </Badge>
-            <h2 className="font-display text-3xl font-bold tracking-tight text-navy-900">
-              Como validar um documento
-            </h2>
-            <p className="mt-3 text-navy-500">
-              Não precisa de conta nem de aplicação. Se recebeu um documento VeriDoc, pode
-              verificar a sua autenticidade em poucos segundos.
-            </p>
-            <ol className="mt-8 space-y-5">
-              {VALIDATE_STEPS.map((step, index) => (
-                <li key={step} className="flex items-start gap-4">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success-100 font-display text-sm font-bold text-success-700">
-                    {index + 1}
-                  </span>
-                  <p className="pt-1 text-sm leading-relaxed text-navy-600">{step}</p>
-                </li>
-              ))}
-            </ol>
-            <Link to="/verificar" className="mt-8 inline-block">
-              <Button size="lg" variant="success" leftIcon={<ScanLine className="size-5" />}>
-                Validar um documento agora
-              </Button>
-            </Link>
-          </div>
+          <FadeIn direction="left">
+            <div>
+              <Badge tone="success" className="mb-4">
+                <ScanLine className="size-3.5" />
+                Validação pública
+              </Badge>
+              <h2 className="font-display text-3xl font-bold tracking-tight text-navy-900">
+                Como validar um documento
+              </h2>
+              <p className="mt-3 text-navy-500">
+                Não precisa de conta nem de aplicação. Se recebeu um documento VeriDoc, pode
+                verificar a sua autenticidade em poucos segundos.
+              </p>
+              <ol className="mt-8 space-y-5">
+                {VALIDATE_STEPS.map((step, index) => (
+                  <li key={step} className="flex items-start gap-4">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success-100 font-display text-sm font-bold text-success-700">
+                      {index + 1}
+                    </span>
+                    <p className="pt-1 text-sm leading-relaxed text-navy-600">{step}</p>
+                  </li>
+                ))}
+              </ol>
+              <Link to="/verificar" className="mt-8 inline-block">
+                <Button size="lg" variant="success" leftIcon={<ScanLine className="size-5" />}>
+                  Validar um documento agora
+                </Button>
+              </Link>
+            </div>
+          </FadeIn>
 
-          <div className="rounded-3xl border border-navy-200 bg-navy-50 p-8 lg:p-10">
-            <div className="rounded-2xl bg-white p-6 shadow-card">
-              <div className="flex items-center gap-3 rounded-xl border border-navy-100 bg-navy-50 p-4">
-                <ShieldCheck className="size-6 shrink-0 text-success-600" />
-                <div>
-                  <p className="font-display text-sm font-semibold text-navy-900">
-                    Um documento válido contém
-                  </p>
-                  <p className="text-xs text-navy-500">
-                    identidade da instituição, hash e assinatura digital
+          <FadeIn direction="right">
+            <Parallax speed={0.08}>
+              <div className="rounded-3xl border border-navy-200 bg-navy-50 p-8 lg:p-10">
+                <div className="rounded-2xl bg-white p-6 shadow-card">
+                  <div className="flex items-center gap-3 rounded-xl border border-navy-100 bg-navy-50 p-4">
+                    <ShieldCheck className="size-6 shrink-0 text-success-600" />
+                    <div>
+                      <p className="font-display text-sm font-semibold text-navy-900">
+                        Um documento válido contém
+                      </p>
+                      <p className="text-xs text-navy-500">
+                        identidade da instituição, hash e assinatura digital
+                      </p>
+                    </div>
+                  </div>
+                  <ul className="mt-4 space-y-3">
+                    {[
+                      'Identificador único e código de validação',
+                      'QR Code com ligação à página de validação',
+                      'Hash SHA-256 do conteúdo protegido',
+                      'Assinatura digital verificada no backend',
+                      'Estado atual: válido, revogado ou expirado',
+                    ].map((item) => (
+                      <li key={item} className="flex items-center gap-3 text-sm text-navy-700">
+                        <CheckCircle2 className="size-4.5 shrink-0 text-success-600" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-5 rounded-xl bg-warning-50 px-4 py-3 text-xs leading-relaxed text-warning-700">
+                    Um QR Code por si só não prova a autenticidade. A confiança nasce da emissão
+                    controlada pela VeriDoc e da verificação do hash e da assinatura digital.
                   </p>
                 </div>
               </div>
-              <ul className="mt-4 space-y-3">
-                {[
-                  'Identificador único e código de validação',
-                  'QR Code com ligação à página de validação',
-                  'Hash SHA-256 do conteúdo protegido',
-                  'Assinatura digital verificada no backend',
-                  'Estado atual: válido, revogado ou expirado',
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-navy-700">
-                    <CheckCircle2 className="size-4.5 shrink-0 text-success-600" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-5 rounded-xl bg-warning-50 px-4 py-3 text-xs leading-relaxed text-warning-700">
-                Um QR Code por si só não prova a autenticidade. A confiança nasce da emissão
-                controlada pela VeriDoc e da verificação do hash e da assinatura digital.
-              </p>
-            </div>
-          </div>
+            </Parallax>
+          </FadeIn>
         </div>
       </section>
 
       <section id="instituicoes" className="bg-navy-950 py-20 lg:py-24">
         <div className="container-page grid items-center gap-12 lg:grid-cols-2">
-          <div>
-            <Badge tone="navy" className="mb-4 bg-primary-600/20 text-primary-300">
-              <Building2 className="size-3.5" />
-              Para instituições
-            </Badge>
-            <h2 className="font-display text-3xl font-bold tracking-tight text-white">
-              Emita documentos digitais com valor legal e verificável
-            </h2>
-            <p className="mt-4 max-w-xl text-navy-300">
-              Universidades, escolas, empresas e entidades públicas podem emitir certificados,
-              diplomas e declarações que qualquer pessoa consegue validar instantaneamente.
-            </p>
-            <ul className="mt-8 space-y-3">
-              {[
-                'Emissão em minutos, com QR Code e PDF gerados automaticamente',
-                'Assinatura digital segura gerida no backend da VeriDoc',
-                'Painel de gestão com auditoria completa',
-                'Revogação e controlo de validade a qualquer momento',
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-navy-200">
-                  <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success-500" />
-                  <span className="text-sm leading-relaxed">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center lg:p-10">
-            <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-elevated">
-              <Building2 className="size-8" />
+          <FadeIn direction="left">
+            <div>
+              <Badge tone="navy" className="mb-4 bg-primary-600/20 text-primary-300">
+                <Building2 className="size-3.5" />
+                Para instituições
+              </Badge>
+              <h2 className="font-display text-3xl font-bold tracking-tight text-white">
+                Emita documentos digitais com valor legal e verificável
+              </h2>
+              <p className="mt-4 max-w-xl text-navy-300">
+                Universidades, escolas, empresas e entidades públicas podem emitir certificados,
+                diplomas e declarações que qualquer pessoa consegue validar instantaneamente.
+              </p>
+              <ul className="mt-8 space-y-3">
+                {[
+                  'Emissão em minutos, com QR Code e PDF gerados automaticamente',
+                  'Assinatura digital segura gerida no backend da VeriDoc',
+                  'Painel de gestão com auditoria completa',
+                  'Revogação e controlo de validade a qualquer momento',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-navy-200">
+                    <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success-500" />
+                    <span className="text-sm leading-relaxed">{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <h3 className="font-display text-xl font-bold text-white">
-              Pronto para começar a emitir?
-            </h3>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-navy-300">
-              Crie a conta da sua instituição e comece a emitir os primeiros documentos hoje.
-            </p>
-            <Link to="/register" className="mt-6 inline-block">
-              <Button
-                size="lg"
-                rightIcon={<ArrowRight className="size-5" />}
-              >
-                Criar conta da instituição
-              </Button>
-            </Link>
-          </div>
+          </FadeIn>
+          <FadeIn direction="right">
+            <Parallax speed={0.1}>
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center lg:p-10">
+                <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-elevated">
+                  <Building2 className="size-8" />
+                </div>
+                <h3 className="font-display text-xl font-bold text-white">
+                  Pronto para começar a emitir?
+                </h3>
+                <p className="mx-auto mt-2 max-w-sm text-sm text-navy-300">
+                  Crie a conta da sua instituição e comece a emitir os primeiros documentos hoje.
+                </p>
+                <Link to="/register" className="mt-6 inline-block">
+                  <Button
+                    size="lg"
+                    rightIcon={<ArrowRight className="size-5" />}
+                  >
+                    Criar conta da instituição
+                  </Button>
+                </Link>
+              </div>
+            </Parallax>
+          </FadeIn>
         </div>
       </section>
     </div>
