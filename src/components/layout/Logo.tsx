@@ -10,9 +10,8 @@ export function Logo({ to = '/', className }: LogoProps) {
   const mark = (
     <img
       src="/logotipo.png"
-      alt=""
-      aria-hidden="true"
-      className="size-9 shrink-0 object-contain"
+      alt="VeriDoc"
+      className="h-10 w-auto shrink-0 object-contain"
     />
   )
 
