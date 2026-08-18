@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { ShieldCheck } from 'lucide-react'
-import { Logo } from '@/components/layout/Logo'
+import { Link } from 'react-router-dom'
 
 interface AuthShellProps {
   title: string
@@ -16,7 +16,9 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url(/banner.png)' }} />
         <div className="absolute inset-0 bg-navy-950/80" />
         <div className="relative z-10">
-          <Logo to="/" />
+          <Link to="/" className="font-display text-xl font-bold text-white">
+            VeriDoc
+          </Link>
         </div>
         <div className="relative z-10 max-w-md">
           <h2 className="font-display text-3xl font-bold leading-snug text-white">
@@ -43,9 +45,6 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
 
       <div className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
         <div className="w-full max-w-md">
-          <div className="mb-8 lg:hidden">
-            <Logo to="/" />
-          </div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-navy-900">{title}</h1>
           <p className="mt-1.5 text-sm text-navy-500">{subtitle}</p>
           <div className="mt-8">{children}</div>
