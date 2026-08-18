@@ -12,9 +12,13 @@ interface AuthShellProps {
 export function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
   return (
     <div className="flex min-h-screen bg-navy-50">
-      <div className="hidden w-1/2 flex-col justify-between bg-navy-950 p-12 lg:flex">
-        <Logo to="/" />
-        <div className="max-w-md">
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden p-12 lg:flex">
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url(/banner.png)' }} />
+        <div className="absolute inset-0 bg-navy-950/80" />
+        <div className="relative z-10">
+          <Logo to="/" />
+        </div>
+        <div className="relative z-10 max-w-md">
           <h2 className="font-display text-3xl font-bold leading-snug text-white">
             Confiança digital em cada documento.
           </h2>
@@ -32,7 +36,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
             )}
           </ul>
         </div>
-        <p className="text-xs text-navy-500">
+        <p className="relative z-10 text-xs text-navy-500">
           © {new Date().getFullYear()} VeriDoc — Confiança digital em cada documento.
         </p>
       </div>
