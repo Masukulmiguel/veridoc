@@ -14,6 +14,9 @@ FROM python:3.13-slim
 # Install nginx and supervisor
 RUN apt-get update && apt-get install -y nginx supervisor && rm -rf /var/lib/apt/lists/*
 
+# Remove default nginx config
+RUN rm -f /etc/nginx/sites-enabled/default
+
 # Setup backend
 WORKDIR /app/backend
 COPY backend/requirements.txt .
