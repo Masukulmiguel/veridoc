@@ -87,13 +87,10 @@ export default function Home() {
     <div>
       <section className="relative overflow-hidden bg-navy-950">
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
-            backgroundSize: '56px 56px',
-          }}
+          className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: 'url(/banner.svg)' }}
         />
+        <div className="pointer-events-none absolute inset-0 bg-navy-950/60" />
         <div className="container-page relative grid items-center gap-12 py-20 lg:grid-cols-2 lg:py-28">
           <div className="animate-fade-up">
             <Badge tone="navy" className="mb-5 bg-primary-600/20 text-primary-300">
