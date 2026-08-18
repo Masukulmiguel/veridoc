@@ -233,20 +233,22 @@ def login_or_create_google(db: Session, claims: dict) -> User:
     return user
 
 
-def get_google_authorization_url() -> str:
+def get_google_authorization_url(redirect_uri: str | None = None) -> str:
+    uri = redirect_uri or settings.GOOGLE_REDIRECT_URI
     return (
         f"{settings.GOOGLE_AUTH_URL}?client_id={settings.GOOGLE_CLIENT_ID}"
-        f"&redirect_uri={settings.GOOGLE_REDIRECT_URI}"
+        f"&redirect_uri={uri}"
         "&response_type=code&scope=openid%20email%20profile"
     )
 
 
-def exchange_google_code(db: Session, code: str) -> User:
+def exchange_google_code(db: Session, code: str, redirect_uri: str | None = None) -> User:
     if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Autenticação Google não configurada.",
         )
+    uri = redirect_uri or settings.GOOGLE_REDIRECT_URI
     try:
         token_response = httpx.post(
             settings.GOOGLE_TOKEN_URL,
@@ -254,7 +256,7 @@ def exchange_google_code(db: Session, code: str) -> User:
                 "code": code,
                 "client_id": settings.GOOGLE_CLIENT_ID,
                 "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+                "redirect_uri": uri,
                 "grant_type": "authorization_code",
             },
             timeout=15,
