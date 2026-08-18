@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { FadeIn } from '@/components/ui/FadeIn'
 import { Parallax } from '@/components/ui/Parallax'
+import { TypeWriter } from '@/components/ui/TypeWriter'
 
 const STEPS = [
   {
@@ -96,7 +97,14 @@ export default function Home() {
           <div className="animate-fade-up max-w-2xl">
             <h1 className="font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
               Documentos digitais{' '}
-              <span className="text-brand-cyan">verificáveis</span>
+              <span className="text-brand-cyan">
+                <TypeWriter
+                  texts={['verificáveis', 'seguros', 'digitais', 'autênticos']}
+                  speed={100}
+                  deleteSpeed={50}
+                  pauseTime={2500}
+                />
+              </span>
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-navy-300">
               Emita, assine e valide documentos com segurança e integridade garantidas.
