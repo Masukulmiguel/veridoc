@@ -13,7 +13,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
   return (
     <div className="flex min-h-screen bg-navy-50">
       <div className="hidden w-1/2 flex-col justify-between bg-navy-950 p-12 lg:flex">
-        <Logo variant="light" to="/" />
+        <Logo to="/" />
         <div className="max-w-md">
           <h2 className="font-display text-3xl font-bold leading-snug text-white">
             Confiança digital em cada documento.

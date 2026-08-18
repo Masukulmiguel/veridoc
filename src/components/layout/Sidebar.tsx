@@ -74,7 +74,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   const content = (
     <div className="flex h-full flex-col bg-navy-950">
       <div className="flex h-16 items-center justify-between px-5">
-        <Logo variant="light" to="/dashboard" />
+        <Logo to="/dashboard" />
         <button
           type="button"
           onClick={onClose}

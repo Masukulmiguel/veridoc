@@ -2,12 +2,11 @@ import { Link } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 
 interface LogoProps {
-  variant?: 'light' | 'dark'
   to?: string
   className?: string
 }
 
-export function Logo({ variant = 'dark', to = '/', className }: LogoProps) {
+export function Logo({ to = '/', className }: LogoProps) {
   const mark = (
     <img
       src="/logotipo.png"

@@ -25,7 +25,7 @@ export function Footer() {
     <footer className="bg-navy-950 text-navy-300">
       <div className="container-page grid gap-10 py-14 md:grid-cols-4">
         <div className="space-y-4">
-          <Logo variant="light" to="/" />
+          <Logo to="/" />
           <p className="max-w-xs text-sm leading-relaxed">
             Confiança digital em cada documento. Emissão, assinatura e validação de documentos com
             integridade verificável.
