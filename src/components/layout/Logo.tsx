@@ -18,16 +18,8 @@ export function Logo({ variant = 'dark', to = '/', className }: LogoProps) {
   )
 
   const wordmark = (
-    <span className="flex items-center gap-2.5">
+    <span className="flex items-center">
       {mark}
-      <span
-        className={cn(
-          'font-display text-xl font-bold tracking-tight',
-          variant === 'dark' ? 'text-navy-900' : 'text-white',
-        )}
-      >
-        Veri<span className="text-primary-600">Doc</span>
-      </span>
     </span>
   )
 

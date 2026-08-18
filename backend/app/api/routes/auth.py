@@ -1,18 +1,21 @@
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.limiter import limiter
 from app.models.user import User
 from app.schemas.auth import (
+    ForgotPasswordRequest,
     GoogleLoginRequest,
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     TokenResponse,
 )
 from app.schemas.user import UserOut
@@ -22,13 +25,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
+@limiter.limit("5/minute")
+def register(request: Request, payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
     user = auth_service.register(db, payload)
     return auth_service.issue_tokens(user, db)
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
+@limiter.limit("10/minute")
+def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     user = auth_service.authenticate(db, payload)
     return auth_service.issue_tokens(user, db)
 
@@ -63,14 +68,24 @@ def google_authorize() -> RedirectResponse:
 @router.get("/google/callback", include_in_schema=False)
 def google_callback(code: str = Query(...), db: Session = Depends(get_db)) -> RedirectResponse:
     user = auth_service.exchange_google_code(db, code)
-    access_token = auth_service.create_access_token(user.id)
-    refresh_token = auth_service.create_refresh_token(user.id)
+    token_response = auth_service.issue_tokens(user, db)
     params = urlencode(
         {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            "access_token": token_response.access_token,
+            "refresh_token": token_response.refresh_token,
+            "expires_in": token_response.expires_in,
         }
     )
     frontend_url = settings.FRONTEND_URL.rstrip("/")
     return RedirectResponse(f"{frontend_url}/login?oauth=success&{params}")
+
+
+@router.post("/forgot-password")
+@limiter.limit("5/minute")
+def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    return auth_service.forgot_password(db, payload.email)
+
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    return auth_service.reset_password(db, payload.token, payload.new_password)

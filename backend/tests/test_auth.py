@@ -34,7 +34,7 @@ class TestAuth:
     def test_login_unknown_email(self, client):
         response = client.post(
             "/api/auth/login",
-            json={"email": "nobody@nowhere.ao", "password": "senha-segura-123"},
+            json={"email": "nobody@nowhere.ao", "password": "Senha-segura-123!"},
         )
         assert response.status_code == 401
 

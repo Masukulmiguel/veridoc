@@ -5,14 +5,14 @@ def _create_viewer(client, admin_headers):
         json={
             "name": "Consulta Resende",
             "email": "consulta@inst.ao",
-            "password": "senha-segura-123",
+            "password": "Senha-segura-123!",
             "role": "VIEWER",
         },
     )
     assert response.status_code == 201, response.text
     login = client.post(
         "/api/auth/login",
-        json={"email": "consulta@inst.ao", "password": "senha-segura-123"},
+        json={"email": "consulta@inst.ao", "password": "Senha-segura-123!"},
     )
     return login.json()
 

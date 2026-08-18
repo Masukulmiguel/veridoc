@@ -41,7 +41,7 @@ class TestDashboardAndInstitution:
         created = client.post(
             "/api/users",
             headers=auth_headers,
-            json={"name": "Emissor Ana", "email": "emissor@inst.ao", "password": "senha-segura-123", "role": "ISSUER"},
+            json={"name": "Emissor Ana", "email": "emissor@inst.ao", "password": "Senha-segura-123!", "role": "ISSUER"},
         )
         assert created.status_code == 201, created.text
         user_id = created.json()["id"]

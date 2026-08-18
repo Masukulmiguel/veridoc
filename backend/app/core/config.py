@@ -1,6 +1,9 @@
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_WEAK_SECRETS = {"change-me-in-production", "change-me", "secret", "changeme", ""}
 
 
 class Settings(BaseSettings):
@@ -33,6 +36,16 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
 
     CORS_ORIGINS: str = "http://localhost:5173"
+
+    @model_validator(mode="after")
+    def _validate_production_secrets(self) -> "Settings":
+        if self.ENVIRONMENT.lower() in {"production", "prod"}:
+            if self.JWT_SECRET_KEY in _WEAK_SECRETS or len(self.JWT_SECRET_KEY) < 32:
+                raise ValueError(
+                    "JWT_SECRET_KEY deve ter pelo menos 32 caracteres em produção. "
+                    "Gere um segredo forte: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+                )
+        return self
 
     @property
     def cors_origin_list(self) -> list[str]:

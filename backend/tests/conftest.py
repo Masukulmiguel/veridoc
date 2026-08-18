@@ -45,7 +45,7 @@ def register_payload() -> dict:
     return {
         "name": "Adelina Teste",
         "email": "adelina@inst.ao",
-        "password": "senha-segura-123",
+        "password": "Senha-segura-123!",
         "institution_name": "Instituto de Teste",
         "tax_id": "5410000000",
         "accept_terms": True,
@@ -54,7 +54,7 @@ def register_payload() -> dict:
 
 @pytest.fixture
 def admin_credentials() -> dict:
-    return {"email": "adelina@inst.ao", "password": "senha-segura-123"}
+    return {"email": "adelina@inst.ao", "password": "Senha-segura-123!"}
 
 
 @pytest.fixture

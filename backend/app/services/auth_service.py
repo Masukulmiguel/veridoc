@@ -1,6 +1,8 @@
 import logging
+from datetime import datetime, timedelta, timezone
 
 import httpx
+import jwt
 from authlib.jose import JsonWebToken
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -24,6 +26,10 @@ logger = logging.getLogger(__name__)
 
 ACTION_USER_CREATED = "USER_CREATED"
 ACTION_LOGIN = "LOGIN"
+
+MAX_FAILED_ATTEMPTS = 5
+LOCKOUT_MINUTES = 15
+RESET_TOKEN_EXPIRE_MINUTES = 30
 
 
 def register(db: Session, payload: RegisterRequest) -> User:
@@ -79,12 +85,36 @@ def authenticate(db: Session, payload: LoginRequest) -> User:
             detail="Credenciais inválidas.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    now = datetime.now(timezone.utc)
+    if user.locked_until and user.locked_until > now:
+        remaining = int((user.locked_until - now).total_seconds() / 60) + 1
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail=f"Conta bloqueada. Tente novamente em {remaining} minuto(s).",
+        )
+
     if not verify_password(payload.password, user.password_hash):
+        user.failed_login_attempts += 1
+        if user.failed_login_attempts >= MAX_FAILED_ATTEMPTS:
+            user.locked_until = now + timedelta(minutes=LOCKOUT_MINUTES)
+            user.failed_login_attempts = 0
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_423_LOCKED,
+                detail=f"Conta bloqueada após {MAX_FAILED_ATTEMPTS} tentativas. Tente novamente em {LOCKOUT_MINUTES} minutos.",
+            )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciais inválidas.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    db.commit()
+
     if user.status != "ACTIVE":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -218,7 +248,7 @@ def exchange_google_code(db: Session, code: str) -> User:
             detail="Autenticação Google não configurada.",
         )
     try:
-        response = httpx.post(
+        token_response = httpx.post(
             settings.GOOGLE_TOKEN_URL,
             data={
                 "code": code,
@@ -229,8 +259,9 @@ def exchange_google_code(db: Session, code: str) -> User:
             },
             timeout=15,
         )
-        response.raise_for_status()
-        id_token = response.json()["id_token"]
+        token_response.raise_for_status()
+        token_data = token_response.json()
+        access_token = token_data.get("access_token")
     except Exception as exc:
         logger.warning("Troca de código OAuth falhou: %s", exc)
         raise HTTPException(
@@ -238,7 +269,22 @@ def exchange_google_code(db: Session, code: str) -> User:
             detail="Falha na autenticação com o Google.",
         ) from exc
 
-    claims = verify_google_id_token(id_token)
+    # Buscar dados do utilizador com o access_token
+    try:
+        userinfo_response = httpx.get(
+            settings.GOOGLE_USERINFO_URL,
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10,
+        )
+        userinfo_response.raise_for_status()
+        claims = userinfo_response.json()
+    except Exception as exc:
+        logger.warning("Falha ao buscar userinfo do Google: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Falha ao obter dados do perfil Google.",
+        ) from exc
+
     return login_or_create_google(db, claims)
 
 
@@ -252,3 +298,84 @@ def to_public_user(user: User) -> dict:
         "institution_id": user.institution_id,
         "created_at": user.created_at,
     }
+
+
+def _create_reset_token(user_id: str) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": user_id,
+        "type": "reset",
+        "iat": now,
+        "exp": now + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES),
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def _decode_reset_token(token: str) -> str:
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de recuperação expirado.",
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de recuperação inválido.",
+        )
+    if payload.get("type") != "reset":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido.",
+        )
+    return payload["sub"]
+
+
+def forgot_password(db: Session, email: str) -> dict:
+    user = db.query(User).filter(User.email == email.lower()).first()
+    if not user:
+        return {"message": "Se o e-mail existir, receberá um link de recuperação."}
+
+    reset_token = _create_reset_token(user.id)
+
+    record_audit(
+        db,
+        actor=user,
+        action="PASSWORD_RESET_REQUESTED",
+        entity_type="user",
+        entity_id=user.id,
+    )
+    db.commit()
+
+    logger.info("Token de recuperação para %s: %s", email, reset_token)
+
+    return {
+        "message": "Se o e-mail existir, receberá um link de recuperação.",
+        "reset_token": reset_token,
+    }
+
+
+def reset_password(db: Session, token: str, new_password: str) -> dict:
+    user_id = _decode_reset_token(token)
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilizador não encontrado.",
+        )
+
+    user.password_hash = hash_password(new_password)
+    user.failed_login_attempts = 0
+    user.locked_until = None
+
+    record_audit(
+        db,
+        actor=user,
+        action="PASSWORD_RESET",
+        entity_type="user",
+        entity_id=user.id,
+    )
+    db.commit()
+
+    return {"message": "Password alterada com sucesso."}

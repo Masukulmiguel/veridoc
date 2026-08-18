@@ -55,8 +55,8 @@ export default function DocumentDetails() {
     )
   }
 
-  const handleDownload = () => {
-    const blob = buildDocumentPdf(document, verificationUrl(document.verificationCode))
+  const handleDownload = async () => {
+    const blob = await buildDocumentPdf(document, verificationUrl(document.verificationCode))
     triggerDownload(blob, `${document.number}.pdf`)
   }
 
@@ -88,7 +88,7 @@ export default function DocumentDetails() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" leftIcon={<FileDown className="size-4.5" />} onClick={handleDownload}>
+          <Button variant="outline" leftIcon={<FileDown className="size-4.5" />} onClick={() => void handleDownload()}>
             Descarregar PDF
           </Button>
           {canRevoke && (

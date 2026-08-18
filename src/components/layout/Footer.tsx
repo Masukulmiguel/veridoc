@@ -11,12 +11,19 @@ const SECTIONS = [
       { label: 'Criar conta', to: '/register' },
     ],
   },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'Política de Privacidade', to: '/privacidade' },
+      { label: 'Termos de Uso', to: '/termos' },
+    ],
+  },
 ]
 
 export function Footer() {
   return (
     <footer className="bg-navy-950 text-navy-300">
-      <div className="container-page grid gap-10 py-14 md:grid-cols-3">
+      <div className="container-page grid gap-10 py-14 md:grid-cols-4">
         <div className="space-y-4">
           <Logo variant="light" to="/" />
           <p className="max-w-xs text-sm leading-relaxed">

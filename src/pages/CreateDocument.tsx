@@ -23,9 +23,9 @@ export default function CreateDocument() {
     setIssued(document)
   }
 
-  function handleDownload() {
+  async function handleDownload() {
     if (!issued) return
-    const blob = buildDocumentPdf(issued, verificationUrl(issued.verificationCode))
+    const blob = await buildDocumentPdf(issued, verificationUrl(issued.verificationCode))
     triggerDownload(blob, `${issued.number}.pdf`)
   }
 
@@ -97,7 +97,7 @@ export default function CreateDocument() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
           <div className="flex gap-3">
-            <Button variant="outline" leftIcon={<FileDown className="size-4.5" />} onClick={handleDownload}>
+            <Button variant="outline" leftIcon={<FileDown className="size-4.5" />} onClick={() => void handleDownload()}>
               Descarregar PDF
             </Button>
             <Link to={`/documents/${issued.id}`}>

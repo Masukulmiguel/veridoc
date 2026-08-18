@@ -61,8 +61,8 @@ export default function Documents() {
 
   const revokeMutation = useRevokeDocument()
 
-  function handleDownload(document: VeriDocument) {
-    const blob = buildDocumentPdf(document, verificationUrl(document.verificationCode))
+  async function handleDownload(document: VeriDocument) {
+    const blob = await buildDocumentPdf(document, verificationUrl(document.verificationCode))
     triggerDownload(blob, `${document.number}.pdf`)
   }
 

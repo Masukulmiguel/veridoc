@@ -92,7 +92,7 @@ class TestDocumentFlow:
             json={
                 "name": "Outra Instituição",
                 "email": "outra@inst.ao",
-                "password": "senha-segura-123",
+                "password": "Senha-segura-123!",
                 "institution_name": "Outra Empresa",
                 "accept_terms": True,
             },
