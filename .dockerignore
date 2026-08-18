@@ -12,7 +12,6 @@ dist-ssr
 .vscode
 .idea
 .DS_Store
-backend/
 .python-version
 *.pyc
 __pycache__
@@ -22,4 +21,6 @@ htmlcov
 README.md
 LICENSE
 SECURITY.md
-logotipo.png
+Dockerfile.backend
+render.yaml
+docker-compose.yml

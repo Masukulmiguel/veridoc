@@ -1,23 +1,32 @@
-FROM node:22-alpine AS build
-
+# Stage 1: Build frontend
+FROM node:22-alpine AS frontend-build
 WORKDIR /app
-
 COPY package.json package-lock.json ./
 RUN npm ci
-
 COPY . .
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=${VITE_API_URL}
 RUN npm run build
 
-FROM nginx:alpine
+# Stage 2: Final image
+FROM python:3.13-slim
 
-COPY --from=build /app/dist /usr/share/nginx/html
+# Install nginx and supervisor
+RUN apt-get update && apt-get install -y nginx supervisor && rm -rf /var/lib/apt/lists/*
+
+# Setup backend
+WORKDIR /app/backend
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/ .
+
+# Setup frontend (nginx)
+COPY --from=frontend-build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Setup supervisor to run both
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-    CMD curl -fsS http://localhost:80/health || exit 1
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
