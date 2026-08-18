@@ -97,7 +97,7 @@ export default function Home() {
           <div className="animate-fade-up max-w-2xl">
             <h1 className="font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
               Documentos digitais{' '}
-              <span className="text-brand-cyan">
+              <span className="inline-block min-w-[280px] text-brand-cyan">
                 <TypeWriter
                   texts={['verificáveis', 'seguros', 'digitais', 'autênticos']}
                   speed={100}
