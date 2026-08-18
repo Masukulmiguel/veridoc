@@ -62,17 +62,13 @@ def google_authorize(request: Request) -> RedirectResponse:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Autenticação Google não configurada.",
         )
-    host = request.base_url.hostname
-    scheme = "https" if request.headers.get("x-forwarded-proto") == "https" else request.url.scheme
-    dynamic_redirect = f"{scheme}://{host}/api/auth/google/callback"
+    dynamic_redirect = f"{settings.FRONTEND_URL}/api/auth/google/callback"
     return RedirectResponse(auth_service.get_google_authorization_url(dynamic_redirect))
 
 
 @router.get("/google/callback", include_in_schema=False)
 def google_callback(request: Request, code: str = Query(...), db: Session = Depends(get_db)) -> RedirectResponse:
-    host = request.base_url.hostname
-    scheme = "https" if request.headers.get("x-forwarded-proto") == "https" else request.url.scheme
-    dynamic_redirect = f"{scheme}://{host}/api/auth/google/callback"
+    dynamic_redirect = f"{settings.FRONTEND_URL}/api/auth/google/callback"
     user = auth_service.exchange_google_code(db, code, dynamic_redirect)
     token_response = auth_service.issue_tokens(user, db)
     params = urlencode(
@@ -82,8 +78,7 @@ def google_callback(request: Request, code: str = Query(...), db: Session = Depe
             "expires_in": token_response.expires_in,
         }
     )
-    frontend_url = settings.FRONTEND_URL
-    return RedirectResponse(f"{frontend_url}/login?oauth=success&{params}")
+    return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=success&{params}")
 
 
 @router.post("/forgot-password")
