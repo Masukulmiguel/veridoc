@@ -197,10 +197,6 @@ export default function Home() {
         <div className="container-page grid items-center gap-12 lg:grid-cols-2">
           <FadeIn direction="left">
             <div>
-              <Badge tone="success" className="mb-4">
-                <ScanLine className="size-3.5" />
-                Validação pública
-              </Badge>
               <h2 className="font-display text-3xl font-bold tracking-tight text-navy-900">
                 Como validar um documento
               </h2>
