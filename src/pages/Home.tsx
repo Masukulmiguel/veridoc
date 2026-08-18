@@ -88,7 +88,7 @@ export default function Home() {
       <section className="relative overflow-hidden bg-navy-950">
         <div
           className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: 'url(/banner.png)' }}
+          style={{ backgroundImage: 'url(/banner.jpg)' }}
         />
         <div className="pointer-events-none absolute inset-0 bg-navy-950/60" />
         <div className="container-page relative grid items-center gap-12 py-20 lg:grid-cols-2 lg:py-28">
