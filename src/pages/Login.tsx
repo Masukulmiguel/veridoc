@@ -10,14 +10,17 @@ export default function Login() {
   const { isAuthenticated } = useAuth()
   const [searchParams] = useSearchParams()
   const [oauthError, setOauthError] = useState(false)
+  const [oauthReason, setOauthReason] = useState('')
 
   useEffect(() => {
     const oauth = searchParams.get('oauth')
     const accessToken = searchParams.get('access_token')
     const refreshToken = searchParams.get('refresh_token')
+    const reason = searchParams.get('reason')
 
     if (oauth === 'error') {
       setOauthError(true)
+      setOauthReason(reason || '')
       window.history.replaceState({}, '', '/login')
       return
     }
@@ -57,8 +60,9 @@ export default function Login() {
     >
       {oauthError && (
         <Alert tone="danger" title="Falha na autenticação Google" className="mb-4">
-          Não foi possível completar a autenticação com o Google. Tente novamente ou utilize o
-          formulário de início de sessão.
+          Não foi possível completar a autenticação com o Google.
+          {oauthReason && <span className="mt-1 block text-xs opacity-80">Detalhe: {oauthReason}</span>}
+          {' '}Tente novamente ou utilize o formulário de início de sessão.
         </Alert>
       )}
       <LoginForm />

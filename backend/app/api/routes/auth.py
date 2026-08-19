@@ -82,10 +82,14 @@ def google_callback(request: Request, code: str = Query(...), db: Session = Depe
             }
         )
         return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=success&{params}")
+    except HTTPException as exc:
+        import logging
+        logging.getLogger(__name__).error("Google OAuth HTTP error: %s - %s", exc.status_code, exc.detail)
+        return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=error&reason={exc.detail}")
     except Exception as exc:
         import logging
         logging.getLogger(__name__).error("Google OAuth callback error: %s", exc)
-        return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=error")
+        return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=error&reason=Erro+inesperado")
 
 
 @router.post("/forgot-password")
