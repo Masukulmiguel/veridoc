@@ -82,7 +82,9 @@ def google_callback(request: Request, code: str = Query(...), db: Session = Depe
             }
         )
         return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=success&{params}")
-    except Exception:
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("Google OAuth callback error: %s", exc)
         return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=error")
 
 
@@ -96,3 +98,14 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
 @limiter.limit("3/minute")
 def reset_password(request: Request, payload: ResetPasswordRequest, db: Session = Depends(get_db)):
     return auth_service.reset_password(db, payload.token, payload.new_password)
+
+
+@router.get("/google/diagnostic", include_in_schema=False)
+def google_diagnostic() -> dict:
+    return {
+        "client_id_set": bool(settings.GOOGLE_CLIENT_ID),
+        "client_secret_set": bool(settings.GOOGLE_CLIENT_SECRET),
+        "client_id_prefix": settings.GOOGLE_CLIENT_ID[:12] + "..." if settings.GOOGLE_CLIENT_ID else "NOT SET",
+        "frontend_url": settings.FRONTEND_URL,
+        "redirect_uri": f"{settings.FRONTEND_URL}/api/auth/google/callback",
+    }

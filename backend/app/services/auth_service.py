@@ -261,6 +261,12 @@ def exchange_google_code(db: Session, code: str, redirect_uri: str | None = None
             },
             timeout=15,
         )
+        if token_response.status_code != 200:
+            logger.error(
+                "Google token exchange failed [%s]: %s",
+                token_response.status_code,
+                token_response.text,
+            )
         token_response.raise_for_status()
         token_data = token_response.json()
         access_token = token_data.get("access_token")
