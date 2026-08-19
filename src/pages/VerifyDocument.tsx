@@ -10,6 +10,13 @@ import { Spinner } from '@/components/ui/Spinner'
 import { VerificationResult } from '@/components/verification/VerificationResult'
 import { QRScanner } from '@/components/verification/QRScanner'
 
+function extractCodeFromUrl(value: string): string {
+  const trimmed = value.trim()
+  const match = trimmed.match(/\/verificar\/([^/?#]+)/i)
+  if (match) return decodeURIComponent(match[1])
+  return trimmed
+}
+
 export default function VerifyDocument() {
   const { codigo } = useParams<{ codigo: string }>()
   const verification = useVerification()
@@ -32,9 +39,10 @@ export default function VerifyDocument() {
   }
 
   function handleQRScan(scannedCode: string) {
-    setCode(scannedCode)
+    const extracted = extractCodeFromUrl(scannedCode)
+    setCode(extracted)
     setDocumentId('')
-    runVerification({ code: scannedCode })
+    runVerification({ code: extracted })
   }
 
   function handleReset() {
