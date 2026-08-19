@@ -55,9 +55,17 @@ export default function DocumentDetails() {
     )
   }
 
+  const [downloadError, setDownloadError] = useState<string | null>(null)
+
   const handleDownload = async () => {
-    const blob = await buildDocumentPdf(document, verificationUrl(document.verificationCode))
-    triggerDownload(blob, `${document.number}.pdf`)
+    setDownloadError(null)
+    try {
+      const blob = await buildDocumentPdf(document, verificationUrl(document.verificationCode))
+      triggerDownload(blob, `${document.number}.pdf`)
+    } catch (err) {
+      console.error('PDF download error:', err)
+      setDownloadError('Não foi possível gerar o PDF. Tente novamente.')
+    }
   }
 
   const handleRevoke = () => {
@@ -91,6 +99,7 @@ export default function DocumentDetails() {
           <Button variant="outline" leftIcon={<FileDown className="size-4.5" />} onClick={() => void handleDownload()}>
             Descarregar PDF
           </Button>
+          {downloadError && <p className="text-xs text-danger-600">{downloadError}</p>}
           {canRevoke && (
             <Button variant="danger" leftIcon={<XCircle className="size-4.5" />} onClick={() => setRevokeOpen(true)}>
               Revogar documento
