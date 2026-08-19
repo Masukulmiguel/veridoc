@@ -94,8 +94,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.on_event("startup")
 def create_tables() -> None:
-    if settings.ENVIRONMENT.lower() in {"development", "test", "testing"}:
-        Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/health")
