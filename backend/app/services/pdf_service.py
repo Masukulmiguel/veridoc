@@ -6,7 +6,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.lib import colors
 
 from app.models.document import Document
@@ -38,28 +37,6 @@ def _data_url_to_bytes(data_url: str) -> bytes | None:
         return None
 
 
-class _BackgroundCanvas(canvas.Canvas):
-    """Custom canvas that draws the background image on every page."""
-
-    def __init__(self, *args, bg_path: str | None = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._bg_path = bg_path
-
-    def showPage(self):
-        if self._bg_path:
-            try:
-                self.drawImage(
-                    self._bg_path,
-                    0, 0,
-                    width=A4[0], height=A4[1],
-                    preserveAspectRatio=True,
-                    anchor="c",
-                )
-            except Exception:
-                pass
-        super().showPage()
-
-
 def generate_document_pdf(
     doc: Document,
     institution: Institution,
@@ -69,121 +46,169 @@ def generate_document_pdf(
     buffer = BytesIO()
     page_w, page_h = A4
 
+    c = canvas.Canvas(buffer, pagesize=A4)
+
     bg_path = _find_asset("modelo-fundo-doc.png")
+    if bg_path:
+        try:
+            c.drawImage(bg_path, 0, 0, width=page_w, height=page_h,
+                        preserveAspectRatio=True, anchor="c")
+        except Exception:
+            pass
+
     veridoc_logo_path = _find_asset("logotipo.png")
-
-    def canvas_maker(*a, **kw):
-        return _BackgroundCanvas(*a, bg_path=bg_path, **kw)
-
-    doc_builder = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        topMargin=12 * mm,
-        bottomMargin=12 * mm,
-        leftMargin=18 * mm,
-        rightMargin=18 * mm,
-    )
-
-    styles = getSampleStyleSheet()
-    navy = colors.HexColor("#121E45")
-    red = colors.HexColor("#C8102E")
-    grey = colors.HexColor("#666666")
-    dark = colors.HexColor("#1A1A1A")
-
-    title_style = ParagraphStyle("DocTitle", parent=styles["Title"], fontSize=18, textColor=navy, spaceAfter=2, alignment=1)
-    subtitle_style = ParagraphStyle("DocSubtitle", parent=styles["Normal"], fontSize=10, textColor=grey, alignment=1, spaceAfter=4)
-    section_style = ParagraphStyle("Section", parent=styles["Normal"], fontSize=9, textColor=dark, fontName="Helvetica-Bold", spaceBefore=6, spaceAfter=3)
-    body_style = ParagraphStyle("Body", parent=styles["Normal"], fontSize=8.5, leading=12, textColor=dark)
-    small_style = ParagraphStyle("Small", parent=styles["Normal"], fontSize=7, leading=10, textColor=grey)
-    hash_style = ParagraphStyle("Hash", parent=styles["Normal"], fontSize=6.5, leading=9, textColor=dark, fontName="Courier")
-
-    story: list = []
-
-    # --- Logos row ---
-    logo_elements = []
     if veridoc_logo_path and os.path.isfile(veridoc_logo_path):
-        logo_elements.append(Image(veridoc_logo_path, width=40 * mm, height=20 * mm))
+        try:
+            c.drawImage(veridoc_logo_path, 40, page_h - 72, width=90, height=48)
+        except Exception:
+            pass
+
     if institution_logo_data_url:
         logo_bytes = _data_url_to_bytes(institution_logo_data_url)
         if logo_bytes:
-            logo_elements.append(Image(BytesIO(logo_bytes), width=40 * mm, height=20 * mm))
+            try:
+                from PIL import Image as PILImage
+                img = PILImage.open(BytesIO(logo_bytes))
+                temp = BytesIO()
+                img.save(temp, format="PNG")
+                temp.seek(0)
+                c.drawImage(temp, page_w - 130, page_h - 72, width=90, height=48)
+            except Exception:
+                pass
 
-    if len(logo_elements) == 2:
-        logo_table = Table([[logo_elements[0], logo_elements[1]]], colWidths=[(page_w - 36 * mm) / 2, (page_w - 36 * mm) / 2])
-        logo_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("ALIGN", (0, 0), (0, 0), "LEFT"), ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
-        story.append(logo_table)
-    elif len(logo_elements) == 1:
-        story.append(logo_elements[0])
-    story.append(Spacer(1, 3 * mm))
+    try:
+        qr_buf = BytesIO(qr_png)
+        c.drawImage(qr_buf, page_w - 115, page_h - 170, width=80, height=80,
+                    preserveAspectRatio=True, anchor="nw")
+        c.setFont("Helvetica", 6)
+        c.setFillColor(colors.Color(0.47, 0.47, 0.47))
+        c.drawCentredString(page_w - 75, page_h - 185, "Verifique a autenticidade")
+        c.drawCentredString(page_w - 75, page_h - 193, "deste documento")
+    except Exception:
+        pass
 
-    # --- Red divider ---
-    divider = Table([[""]], colWidths=[page_w - 36 * mm], rowHeights=[1])
-    divider.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), red)]))
-    story.append(divider)
-    story.append(Spacer(1, 2 * mm))
+    navy = colors.Color(18 / 255, 30 / 255, 69 / 255)
+    grey = colors.Color(100 / 255, 100 / 255, 100 / 255)
+    dark = colors.Color(20 / 255, 20 / 255, 20 / 255)
 
-    # --- Title ---
-    story.append(Paragraph(doc.title.upper(), title_style))
-    story.append(Paragraph(doc.institution.legal_name, subtitle_style))
-    story.append(Spacer(1, 3 * mm))
+    y = page_h - 210
 
-    # --- Document Info ---
-    story.append(Paragraph("INFORMAÇÕES DO DOCUMENTO", section_style))
-    info_items = [
-        f"<b>Tipo de documento:</b> {doc.document_type}",
-        f"<b>Número:</b> {doc.document_number}",
-        f"<b>Titular:</b> {doc.holder_name}",
-        f"<b>Data de emissão:</b> {doc.issued_at.strftime('%d/%m/%Y') if doc.issued_at else '—'}",
-        f"<b>Estado:</b> {doc.status}",
-        f"<b>Código de validação:</b> {doc.verification_code}",
+    c.setFont("Helvetica-Bold", 18)
+    c.setFillColor(navy)
+    c.drawCentredString(page_w / 2, y, doc.title.upper())
+    y -= 22
+
+    c.setFont("Helvetica", 11)
+    c.setFillColor(grey)
+    c.drawCentredString(page_w / 2, y, institution.legal_name)
+    y -= 30
+
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(navy)
+    c.drawString(50, y, "INFORMACOES DO DOCUMENTO")
+    y -= 18
+
+    fields = [
+        ("Tipo de documento:", doc.document_type),
+        ("Numero:", doc.document_number),
+        ("Titular:", doc.holder_name),
+        ("Data de emissao:", doc.issued_at.strftime("%d/%m/%Y") if doc.issued_at else "\u2014"),
+        ("Estado:", doc.status),
+        ("Codigo de validacao:", doc.verification_code),
     ]
-    story.append(Paragraph("<br/>".join(info_items), body_style))
-    story.append(Spacer(1, 3 * mm))
 
-    # --- Security ---
-    story.append(Paragraph("SEGURANÇA E INTEGRIDADE", section_style))
-    story.append(Paragraph("<b>Hash SHA-256:</b>", body_style))
-    story.append(Paragraph(doc.content_hash, hash_style))
-    story.append(Spacer(1, 3 * mm))
+    for label, value in fields:
+        c.setFont("Helvetica", 9)
+        c.setFillColor(grey)
+        c.drawString(50, y, label)
+        c.setFont("Helvetica-Bold", 9)
+        c.setFillColor(dark)
+        c.drawString(190, y, value)
+        y -= 15
 
-    # --- Signature ---
-    story.append(Paragraph("ASSINATURA DIGITAL", section_style))
-    sig_items = []
+    y -= 10
+
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(navy)
+    c.drawString(50, y, "SEGURANCA E INTEGRIDADE")
+    y -= 16
+
+    c.setFont("Helvetica", 9)
+    c.setFillColor(grey)
+    c.drawString(50, y, "Hash SHA-256:")
+    y -= 14
+
+    c.setFont("Courier", 7)
+    c.setFillColor(dark)
+    h = doc.content_hash
+    c.drawString(50, y, h[:80])
+    y -= 10
+    if len(h) > 80:
+        c.drawString(50, y, h[80:160])
+        y -= 10
+    if len(h) > 160:
+        c.drawString(50, y, h[160:])
+        y -= 10
+    y -= 8
+
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(navy)
+    c.drawString(50, y, "ASSINATURA DIGITAL")
+    y -= 16
+
+    c.setFont("Helvetica", 9)
+    c.setFillColor(grey)
+    c.drawString(50, y, "Algoritmo:")
+    c.setFillColor(dark)
     if doc.signature:
-        sig_items.append(f"<b>Algoritmo:</b> {doc.signature.algorithm}")
-        sig_items.append(f"<b>Assinado por:</b> {doc.signature.signed_by}")
-        sig_items.append(f"<b>Data:</b> {doc.signature.created_at.strftime('%d/%m/%Y') if doc.signature.created_at else '—'}")
-    else:
-        sig_items.append("<b>Assinatura:</b> Não disponível")
-    story.append(Paragraph("<br/>".join(sig_items), body_style))
-    story.append(Spacer(1, 3 * mm))
+        c.drawString(120, y, doc.signature.algorithm)
+    y -= 14
 
-    # --- Verification + QR Code side by side ---
-    story.append(Paragraph("VALIDAÇÃO DO DOCUMENTO", section_style))
+    c.setFillColor(grey)
+    c.drawString(50, y, "Assinado por:")
+    c.setFillColor(dark)
+    if doc.signature:
+        c.drawString(145, y, doc.signature.signed_by)
+    y -= 14
+
+    c.setFillColor(grey)
+    c.drawString(50, y, "Data:")
+    c.setFillColor(dark)
+    if doc.signature and doc.signature.created_at:
+        c.drawString(90, y, doc.signature.created_at.strftime("%d/%m/%Y"))
+    y -= 22
+
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(navy)
+    c.drawString(50, y, "VALIDACAO DO DOCUMENTO")
+    y -= 16
+
     ver_url = qr_service.verification_url(doc.verification_code)
-    story.append(Paragraph(f"<b>Aceda a:</b> {ver_url}", body_style))
-    story.append(Paragraph(f"<b>Código:</b> {doc.verification_code}", body_style))
-    story.append(Spacer(1, 2 * mm))
+    c.setFont("Helvetica", 9)
+    c.setFillColor(grey)
+    c.drawString(50, y, "Aceda a:")
+    c.setFillColor(dark)
+    c.drawString(110, y, ver_url)
+    y -= 14
 
-    qr_image = Image(BytesIO(qr_png), width=28 * mm, height=28 * mm)
-    story.append(qr_image)
-    story.append(Paragraph("Verifique a autenticidade deste documento", small_style))
-    story.append(Spacer(1, 4 * mm))
+    c.setFillColor(grey)
+    c.drawString(50, y, "Codigo:")
+    c.setFillColor(dark)
+    c.drawString(110, y, doc.verification_code)
+    y -= 30
 
-    # --- Footer ---
-    story.append(Paragraph(
-        "VeriDoc — Plataforma Oficial de Documentos Digitais da República de Angola",
-        ParagraphStyle("Footer", parent=styles["Normal"], fontSize=7, textColor=grey, alignment=1),
-    ))
+    c.setFont("Helvetica", 7)
+    c.setFillColor(colors.Color(0.55, 0.55, 0.55))
+    c.drawCentredString(page_w / 2, 50, "VeriDoc - Plataforma Oficial de Documentos Digitais da Republica de Angola")
+    issued_str = doc.issued_at.strftime("%d/%m/%Y") if doc.issued_at else "\u2014"
+    c.drawCentredString(page_w / 2, 40, f"Emitido em {issued_str} | Verificado automaticamente")
 
     if doc.status == "REVOKED":
-        story.append(Spacer(1, 3 * mm))
-        story.append(Paragraph(
-            f"<b>DOCUMENTO REVOGADO</b> em {doc.revoked_at.strftime('%d/%m/%Y') if doc.revoked_at else '—'}: "
-            f"{doc.revoked_reason or 'Sem motivo registado.'}",
-            ParagraphStyle("Revoked", parent=styles["Normal"], fontSize=9, textColor=colors.red, fontName="Helvetica-Bold"),
-        ))
+        c.setFont("Helvetica-Bold", 9)
+        c.setFillColor(colors.red)
+        revoked_str = f"DOCUMENTO REVOGADO em {doc.revoked_at.strftime('%d/%m/%Y') if doc.revoked_at else '\u2014'}: {doc.revoked_reason or 'Sem motivo registado.'}"
+        c.drawCentredString(page_w / 2, 28, revoked_str)
 
-    doc_builder.build(story, canvasmaker=canvas_maker)
+    c.save()
     buffer.seek(0)
     return buffer
