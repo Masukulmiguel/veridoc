@@ -9,51 +9,54 @@ function escapePdfText(text: string): string {
     .replace(/\n/g, ' ')
 }
 
-function textLine(content: string, x: number, y: number, size: number, font: string, text: string): string {
-  return `${content}BT\n/F${font} ${size} Tf\n${x} ${y} Td\n(${escapePdfText(text)}) Tj\nET\n`
+function textLine(x: number, y: number, size: number, font: string, text: string): string {
+  return `BT\n/F${font} ${size} Tf\n${x} ${y} Td\n(${escapePdfText(text)}) Tj\nET\n`
 }
 
 function rect(x: number, y: number, w: number, h: number, r: number, g: number, b: number): string {
   return `${r} ${g} ${b} rg\n${x} ${y} ${w} ${h} re f\n`
 }
 
-async function loadLogoAsJpeg(maxWidth = 400, maxHeight = 130): Promise<{ jpegBytes: Uint8Array; width: number; height: number } | null> {
+async function loadLogoAsJpeg(): Promise<{ jpegBytes: Uint8Array; width: number; height: number } | null> {
   try {
     const response = await fetch('/logotipo.png')
-    const imageBlob = await response.blob()
+    const blob = await response.blob()
 
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const el = new Image()
       el.onload = () => resolve(el)
       el.onerror = reject
-      el.src = URL.createObjectURL(imageBlob)
+      el.src = URL.createObjectURL(blob)
     })
 
-    let w = img.width
-    let h = img.height
-    if (w > maxWidth) {
-      h = Math.round((h * maxWidth) / w)
-      w = maxWidth
+    const maxW = 400
+    const maxH = 130
+    let w = img.naturalWidth
+    let h = img.naturalHeight
+    if (w > maxW) {
+      h = Math.round((h * maxW) / w)
+      w = maxW
     }
-    if (h > maxHeight) {
-      w = Math.round((w * maxHeight) / h)
-      h = maxHeight
+    if (h > maxH) {
+      w = Math.round((w * maxH) / h)
+      h = maxH
     }
 
     const canvas = document.createElement('canvas')
     canvas.width = w
     canvas.height = h
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
     ctx.drawImage(img, 0, 0, w, h)
 
     const jpegBlob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.8)
+      canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.7)
     })
 
-    if (!jpegBlob) return null
+    if (!jpegBlob || jpegBlob.size > 100_000) return null
 
-    const jpegBytes = new Uint8Array(await jpegBlob.arrayBuffer())
-    return { jpegBytes, width: w, height: h }
+    const buf = await jpegBlob.arrayBuffer()
+    return { jpegBytes: new Uint8Array(buf), width: w, height: h }
   } catch {
     return null
   }
@@ -73,19 +76,19 @@ export async function buildDocumentPdf(doc: VeriDocument, verificationUrl: strin
   if (logo) {
     content += `q\n${logo.width} 0 0 ${logo.height} 30 770 cm\n/Img1 Do\nQ\n`
   } else {
-    content += textLine(content, 35, 790, 36, '1', 'V')
+    content += textLine(35, 790, 36, '1', 'V')
   }
 
   content += rect(420, 785, 150, 35, 0.89, 0.10, 0.22)
-  content += textLine(content, 430, 797, 9, '1', 'DOCUMENTO')
-  content += textLine(content, 430, 784, 11, '1', 'VERIFICADO')
+  content += textLine(430, 797, 9, '1', 'DOCUMENTO')
+  content += textLine(430, 784, 11, '1', 'VERIFICADO')
 
-  content += textLine(content, 40, 730, 18, '1', doc.title)
-  content += textLine(content, 40, 714, 10, '3', doc.institution.name)
+  content += textLine(40, 730, 18, '1', doc.title)
+  content += textLine(40, 714, 10, '3', doc.institution.name)
   content += rect(40, 706, 515, 0.5, 0.60, 0.60, 0.60)
 
   content += rect(40, 680, 515, 22, 0.95, 0.95, 0.95)
-  content += textLine(content, 50, 685, 10, '1', 'INFORMACOES DO DOCUMENTO')
+  content += textLine(50, 685, 10, '1', 'INFORMACOES DO DOCUMENTO')
   content += rect(40, 678, 515, 2, 0.89, 0.10, 0.22)
 
   const fields: Array<[string, string]> = [
@@ -99,45 +102,45 @@ export async function buildDocumentPdf(doc: VeriDocument, verificationUrl: strin
 
   let y = 660
   for (const [label, value] of fields) {
-    content += textLine(content, 50, y, 9, '3', `${label}:`)
-    content += textLine(content, 200, y, 9, '1', value)
+    content += textLine(50, y, 9, '3', `${label}:`)
+    content += textLine(200, y, 9, '1', value)
     y -= 16
   }
 
   content += rect(40, y - 5, 515, 22, 0.95, 0.95, 0.95)
-  content += textLine(content, 50, y, 10, '1', 'SEGURANCA E INTEGRIDADE')
+  content += textLine(50, y, 10, '1', 'SEGURANCA E INTEGRIDADE')
   content += rect(40, y - 7, 515, 2, 0.89, 0.10, 0.22)
   y -= 28
-  content += textLine(content, 50, y, 8, '3', 'Hash SHA-256:')
-  content += textLine(content, 130, y, 6, '4', doc.contentHash.slice(0, 80))
+  content += textLine(50, y, 8, '3', 'Hash SHA-256:')
+  content += textLine(130, y, 6, '4', doc.contentHash.slice(0, 80))
   y -= 12
-  content += textLine(content, 130, y, 6, '4', doc.contentHash.slice(80, 160))
+  content += textLine(130, y, 6, '4', doc.contentHash.slice(80, 160))
 
   y -= 24
   content += rect(40, y - 5, 515, 22, 0.95, 0.95, 0.95)
-  content += textLine(content, 50, y, 10, '1', 'ASSINATURA DIGITAL')
+  content += textLine(50, y, 10, '1', 'ASSINATURA DIGITAL')
   content += rect(40, y - 7, 515, 2, 0.89, 0.10, 0.22)
   y -= 28
-  content += textLine(content, 50, y, 8, '3', `Algoritmo: ${doc.signature.algorithm}`)
+  content += textLine(50, y, 8, '3', `Algoritmo: ${doc.signature.algorithm}`)
   y -= 14
-  content += textLine(content, 50, y, 8, '3', `Assinado por: ${doc.signature.signedBy}`)
+  content += textLine(50, y, 8, '3', `Assinado por: ${doc.signature.signedBy}`)
   y -= 14
-  content += textLine(content, 50, y, 8, '3', `Data: ${formatDate(doc.signature.signedAt)}`)
+  content += textLine(50, y, 8, '3', `Data: ${formatDate(doc.signature.signedAt)}`)
 
   y -= 30
   content += rect(40, y - 5, 515, 22, 0.95, 0.95, 0.95)
-  content += textLine(content, 50, y, 10, '1', 'VALIDACAO DO DOCUMENTO')
+  content += textLine(50, y, 10, '1', 'VALIDACAO DO DOCUMENTO')
   content += rect(40, y - 7, 515, 2, 0.89, 0.10, 0.22)
   y -= 28
-  content += textLine(content, 50, y, 9, '3', `Aceda a: ${fullUrl}`)
+  content += textLine(50, y, 9, '3', `Aceda a: ${fullUrl}`)
   y -= 16
-  content += textLine(content, 50, y, 9, '1', `Codigo: ${doc.verificationCode}`)
+  content += textLine(50, y, 9, '1', `Codigo: ${doc.verificationCode}`)
 
   content += rect(0, 0, 595, 45, 0.07, 0.13, 0.27)
   content += rect(0, 45, 595, 3, 0.89, 0.10, 0.22)
   content += rect(0, 48, 595, 1, 0.96, 0.77, 0.19)
-  content += textLine(content, 40, 24, 7, '3', 'VeriDoc - Plataforma Oficial de Documentos Digitais da Republica de Angola')
-  content += textLine(content, 40, 12, 7, '4', `Emitido em ${formatDate(doc.issuedAt)} | Verificado automaticamente`)
+  content += textLine(40, 24, 7, '3', 'VeriDoc - Plataforma Oficial de Documentos Digitais da Republica de Angola')
+  content += textLine(40, 12, 7, '4', `Emitido em ${formatDate(doc.issuedAt)} | Verificado automaticamente`)
 
   const contentBytes = new TextEncoder().encode(content)
 
