@@ -27,37 +27,57 @@ async function fetchImageAsDataUrl(path: string): Promise<string | null> {
   }
 }
 
+function drawLine(
+  pdf: jsPDF,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  r: number, g: number, b: number,
+  width: number = 0.3,
+) {
+  pdf.setDrawColor(r, g, b)
+  pdf.setLineWidth(width)
+  pdf.line(x1, y1, x2, y2)
+}
+
 export async function buildDocumentPdf(
   doc: VeriDocument,
   verificationUrl: string,
   institutionLogoDataUrl?: string | null,
 ): Promise<Blob> {
   const pdf = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
-  const pageW = 595
-  const pageH = 842
+
+  const W = 595
+  const H = 842
+  const ML = 55
+  const MR = W - 55
+  const CW = MR - ML
+  const CX = ML + CW / 2
+
+  const navyR = 18, navyG = 30, navyB = 69
+  const greyR = 110, greyG = 110, greyB = 110
+  const lightGreyR = 150, lightGreyG = 150, lightGreyB = 150
+  const darkR = 25, darkG = 25, darkB = 25
+  const lineR = 200, lineG = 208, lineB = 220
 
   const bgDataUrl = await fetchImageAsDataUrl('/modelo-fundo-doc.png')
   if (bgDataUrl) {
     try {
       const bgImg = await dataUrlToImage(bgDataUrl)
-      pdf.addImage(bgImg, 'PNG', 0, 0, pageW, pageH)
+      pdf.addImage(bgImg, 'PNG', 0, 0, W, H)
     } catch { /* skip */ }
   }
+
+  let y = H - 55
 
   const veridocLogoDataUrl = await fetchImageAsDataUrl('/logotipo.png')
   if (veridocLogoDataUrl) {
     try {
       const logoImg = await dataUrlToImage(veridocLogoDataUrl)
-      pdf.addImage(logoImg, 'PNG', 40, 28, 90, 48)
-    } catch { /* skip */ }
-  }
-  if (institutionLogoDataUrl) {
-    try {
-      const instImg = await dataUrlToImage(institutionLogoDataUrl)
-      pdf.addImage(instImg, 'PNG', pageW - 130, 28, 90, 48)
+      pdf.addImage(logoImg, 'PNG', ML, y - 38, 110, 38)
     } catch { /* skip */ }
   }
 
+  let qrY = y - 38
   try {
     const qrRes = await api.get(`/documents/${doc.id}/qrcode`, { responseType: 'blob' })
     if (qrRes.data) {
@@ -67,131 +87,196 @@ export async function buildDocumentPdf(
         reader.readAsDataURL(qrRes.data)
       })
       const qrImg = await dataUrlToImage(qrDataUrl)
-      pdf.addImage(qrImg, 'PNG', pageW - 115, 90, 80, 80)
+      const qrSize = 62
+      const qrX = MR - qrSize
+      pdf.addImage(qrImg, 'PNG', qrX, qrY, qrSize, qrSize)
       pdf.setFont('helvetica', 'normal')
       pdf.setFontSize(6)
-      pdf.setTextColor(120, 120, 120)
-      pdf.text('Verifique a autenticidade', pageW - 75, 175, { align: 'center' })
-      pdf.text('deste documento', pageW - 75, 182, { align: 'center' })
+      pdf.setTextColor(lightGreyR, lightGreyG, lightGreyB)
+      pdf.text('Verificar autenticidade', qrX + qrSize / 2, qrY + qrSize + 9, { align: 'center' })
     }
   } catch { /* skip QR */ }
 
-  let y = 200
-
-  pdf.setFont('helvetica', 'bold')
-  pdf.setFontSize(18)
-  pdf.setTextColor(18, 30, 69)
-  pdf.text(doc.title.toUpperCase(), pageW / 2, y, { align: 'center' })
-  y += 22
-
-  pdf.setFont('helvetica', 'normal')
-  pdf.setFontSize(11)
-  pdf.setTextColor(80, 80, 80)
-  pdf.text(doc.institution.name, pageW / 2, y, { align: 'center' })
-  y += 30
-
-  pdf.setFont('helvetica', 'bold')
-  pdf.setFontSize(10)
-  pdf.setTextColor(18, 30, 69)
-  pdf.text('INFORMACOES DO DOCUMENTO', 50, y)
-  y += 18
-
-  const fields: Array<[string, string]> = [
-    ['Tipo de documento:', DOCUMENT_TYPE_LABELS[doc.type] ?? doc.type],
-    ['Numero:', doc.number],
-    ['Titular:', doc.holderName],
-    ['Data de emissao:', formatDate(doc.issuedAt)],
-    ['Estado:', doc.status],
-    ['Codigo de validacao:', doc.verificationCode],
-  ]
-
-  for (const [label, value] of fields) {
-    pdf.setFont('helvetica', 'normal')
-    pdf.setFontSize(9)
-    pdf.setTextColor(100, 100, 100)
-    pdf.text(label, 50, y)
-    pdf.setFont('helvetica', 'bold')
-    pdf.setTextColor(20, 20, 20)
-    pdf.text(value, 190, y)
-    y += 15
+  if (institutionLogoDataUrl) {
+    try {
+      const instImg = await dataUrlToImage(institutionLogoDataUrl)
+      const instMaxW = 110
+      const instMaxH = 38
+      pdf.addImage(instImg, 'PNG', MR - instMaxW, y - 38, instMaxW, instMaxH)
+    } catch { /* skip */ }
   }
 
-  y += 10
+  drawLine(pdf, ML, y - 48, MR, y - 48, lineR, lineG, lineB, 0.5)
+
+  y = y - 68
 
   pdf.setFont('helvetica', 'bold')
-  pdf.setFontSize(10)
-  pdf.setTextColor(18, 30, 69)
-  pdf.text('SEGURANCA E INTEGRIDADE', 50, y)
+  pdf.setFontSize(20)
+  pdf.setTextColor(navyR, navyG, navyB)
+  pdf.text(doc.title.toUpperCase(), CX, y, { align: 'center' })
   y += 16
 
   pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(8)
+  pdf.setTextColor(lightGreyR, lightGreyG, lightGreyB)
+  pdf.text('Documento digital verificavel', CX, y, { align: 'center' })
+  y += 18
+
+  drawLine(pdf, ML + CW * 0.35, y, MR - CW * 0.35, y, lineR, lineG, lineB, 0.3)
+  y += 20
+
+  pdf.setFont('helvetica', 'normal')
   pdf.setFontSize(9)
-  pdf.setTextColor(100, 100, 100)
-  pdf.text('Hash SHA-256:', 50, y)
-  y += 14
+  pdf.setTextColor(greyR, greyG, greyB)
+  pdf.text('INSTITUICAO EMISSORA', CX, y, { align: 'center' })
+  y += 18
+
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(12)
+  pdf.setTextColor(darkR, darkG, darkB)
+  pdf.text(doc.institution.name, CX, y, { align: 'center' })
+  y += 28
+
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(9)
+  pdf.setTextColor(greyR, greyG, greyB)
+  pdf.text('Certifica-se que', CX, y, { align: 'center' })
+  y += 22
+
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(22)
+  pdf.setTextColor(navyR, navyG, navyB)
+  pdf.text(doc.holderName.toUpperCase(), CX, y, { align: 'center' })
+  y += 10
+
+  drawLine(pdf, CX - 80, y, CX + 80, y, navyR, navyG, navyB, 0.6)
+  y += 30
+
+  drawLine(pdf, ML, y, MR, y, lineR, lineG, lineB, 0.5)
+  y += 20
+
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(9)
+  pdf.setTextColor(navyR, navyG, navyB)
+  pdf.text('INFORMACOES DO DOCUMENTO', ML, y)
+  y += 18
+
+  const colLabel = ML
+  const colValue = ML + 155
+
+  const infoFields: Array<[string, string]> = [
+    ['Tipo de documento', DOCUMENT_TYPE_LABELS[doc.type] ?? doc.type],
+    ['Numero', doc.number],
+    ['Titular', doc.holderName],
+    ['Data de emissao', formatDate(doc.issuedAt)],
+    ['Estado', doc.status === 'VALID' ? 'VALIDADO' : doc.status],
+    ['Codigo de validacao', doc.verificationCode],
+  ]
+
+  for (const [label, value] of infoFields) {
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(8.5)
+    pdf.setTextColor(greyR, greyG, greyB)
+    pdf.text(label, colLabel, y)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(8.5)
+    pdf.setTextColor(darkR, darkG, darkB)
+    pdf.text(value, colValue, y)
+    y += 14
+  }
+
+  y += 8
+
+  drawLine(pdf, ML, y, MR, y, lineR, lineG, lineB, 0.5)
+  y += 18
+
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(9)
+  pdf.setTextColor(navyR, navyG, navyB)
+  pdf.text('SEGURANCA E INTEGRIDADE', ML, y)
+  y += 16
 
   pdf.setFont('courier', 'normal')
   pdf.setFontSize(7)
-  pdf.setTextColor(20, 20, 20)
-  const hash1 = doc.contentHash.slice(0, 80)
-  const hash2 = doc.contentHash.slice(80, 160)
-  pdf.text(hash1, 50, y)
-  y += 10
-  if (hash2) pdf.text(hash2, 50, y)
+  pdf.setTextColor(darkR, darkG, darkB)
+  const hash = doc.contentHash
+  const maxHashLen = 85
+  let hashOffset = 0
+  while (hashOffset < hash.length) {
+    pdf.text(hash.slice(hashOffset, hashOffset + maxHashLen), ML, y)
+    y += 10
+    hashOffset += maxHashLen
+  }
+  y += 8
+
+  drawLine(pdf, ML, y, MR, y, lineR, lineG, lineB, 0.5)
   y += 18
 
   pdf.setFont('helvetica', 'bold')
-  pdf.setFontSize(10)
-  pdf.setTextColor(18, 30, 69)
-  pdf.text('ASSINATURA DIGITAL', 50, y)
-  y += 16
-
-  pdf.setFont('helvetica', 'normal')
   pdf.setFontSize(9)
-  pdf.setTextColor(100, 100, 100)
-  pdf.text('Algoritmo:', 50, y)
-  pdf.setTextColor(20, 20, 20)
-  pdf.text(doc.signature.algorithm, 120, y)
-  y += 14
+  pdf.setTextColor(navyR, navyG, navyB)
+  pdf.text('ASSINATURA DIGITAL', ML, y)
+  y += 18
 
-  pdf.setTextColor(100, 100, 100)
-  pdf.text('Assinado por:', 50, y)
-  pdf.setTextColor(20, 20, 20)
-  pdf.text(doc.signature.signedBy, 145, y)
-  y += 14
+  const sigFields: Array<[string, string]> = [
+    ['Algoritmo', doc.signature.algorithm],
+    ['Assinado por', doc.signature.signedBy],
+    ['Data', formatDate(doc.signature.signedAt)],
+  ]
 
-  pdf.setTextColor(100, 100, 100)
-  pdf.text('Data:', 50, y)
-  pdf.setTextColor(20, 20, 20)
-  pdf.text(formatDate(doc.signature.signedAt), 90, y)
-  y += 22
+  for (const [label, value] of sigFields) {
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(8.5)
+    pdf.setTextColor(greyR, greyG, greyB)
+    pdf.text(label, colLabel, y)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(8.5)
+    pdf.setTextColor(darkR, darkG, darkB)
+    pdf.text(value, colValue, y)
+    y += 14
+  }
+  y += 8
+
+  drawLine(pdf, ML, y, MR, y, lineR, lineG, lineB, 0.5)
+  y += 18
 
   pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(9)
+  pdf.setTextColor(navyR, navyG, navyB)
+  pdf.text('VALIDACAO DO DOCUMENTO', ML, y)
+  y += 18
+
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(8.5)
+  pdf.setTextColor(greyR, greyG, greyB)
+  pdf.text('Codigo de validacao', colLabel, y)
+  pdf.setFont('courier', 'bold')
   pdf.setFontSize(10)
-  pdf.setTextColor(18, 30, 69)
-  pdf.text('VALIDACAO DO DOCUMENTO', 50, y)
-  y += 16
+  pdf.setTextColor(navyR, navyG, navyB)
+  pdf.text(doc.verificationCode, colValue, y)
+  y += 18
 
   const fullUrl = `${verificationUrl}/${doc.verificationCode}/${doc.verificationCode}`
   pdf.setFont('helvetica', 'normal')
-  pdf.setFontSize(9)
-  pdf.setTextColor(100, 100, 100)
-  pdf.text('Aceda a:', 50, y)
-  pdf.setTextColor(20, 20, 20)
-  pdf.text(fullUrl, 110, y)
-  y += 14
+  pdf.setFontSize(8.5)
+  pdf.setTextColor(greyR, greyG, greyB)
+  pdf.text('URL de validacao', colLabel, y)
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(7.5)
+  pdf.setTextColor(darkR, darkG, darkB)
+  pdf.text(fullUrl, colValue, y)
 
-  pdf.setTextColor(100, 100, 100)
-  pdf.text('Codigo:', 50, y)
-  pdf.setTextColor(20, 20, 20)
-  pdf.text(doc.verificationCode, 110, y)
-  y += 30
+  y = H - 55
+
+  drawLine(pdf, ML, y, MR, y, lineR, lineG, lineB, 0.5)
+  y -= 14
 
   pdf.setFont('helvetica', 'normal')
-  pdf.setFontSize(7)
-  pdf.setTextColor(140, 140, 140)
-  pdf.text('VeriDoc - Plataforma Oficial de Documentos Digitais da Republica de Angola', pageW / 2, pageH - 50, { align: 'center' })
-  pdf.text('Emitido em ' + formatDate(doc.issuedAt) + ' | Verificado automaticamente', pageW / 2, pageH - 40, { align: 'center' })
+  pdf.setFontSize(6.5)
+  pdf.setTextColor(lightGreyR, lightGreyG, lightGreyB)
+  pdf.text('VeriDoc — Plataforma Oficial de Documentos Digitais da Republica de Angola', CX, y, { align: 'center' })
+  y -= 10
+  pdf.text('Emitido em ' + formatDate(doc.issuedAt) + ' | Verificado automaticamente', CX, y, { align: 'center' })
 
   return pdf.output('blob')
 }
