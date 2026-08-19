@@ -71,16 +71,19 @@ def google_authorize(request: Request) -> RedirectResponse:
 @router.get("/google/callback", include_in_schema=False)
 def google_callback(request: Request, code: str = Query(...), db: Session = Depends(get_db)) -> RedirectResponse:
     dynamic_redirect = f"{settings.FRONTEND_URL}/api/auth/google/callback"
-    user = auth_service.exchange_google_code(db, code, dynamic_redirect)
-    token_response = auth_service.issue_tokens(user, db)
-    params = urlencode(
-        {
-            "access_token": token_response.access_token,
-            "refresh_token": token_response.refresh_token,
-            "expires_in": token_response.expires_in,
-        }
-    )
-    return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=success&{params}")
+    try:
+        user = auth_service.exchange_google_code(db, code, dynamic_redirect)
+        token_response = auth_service.issue_tokens(user, db)
+        params = urlencode(
+            {
+                "access_token": token_response.access_token,
+                "refresh_token": token_response.refresh_token,
+                "expires_in": token_response.expires_in,
+            }
+        )
+        return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=success&{params}")
+    except Exception:
+        return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=error")
 
 
 @router.post("/forgot-password")

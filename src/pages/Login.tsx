@@ -1,18 +1,27 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { AuthShell } from '@/components/auth/AuthShell'
 import { LoginForm } from '@/components/forms/LoginForm'
 import { useAuth } from '@/hooks/useAuth'
 import { setTokens, USER_STORAGE_KEY } from '@/services/api'
+import { Alert } from '@/components/ui/Alert'
 
 export default function Login() {
   const { isAuthenticated } = useAuth()
   const [searchParams] = useSearchParams()
+  const [oauthError, setOauthError] = useState(false)
 
   useEffect(() => {
     const oauth = searchParams.get('oauth')
     const accessToken = searchParams.get('access_token')
     const refreshToken = searchParams.get('refresh_token')
+
+    if (oauth === 'error') {
+      setOauthError(true)
+      window.history.replaceState({}, '', '/login')
+      return
+    }
+
     if (oauth === 'success' && accessToken && refreshToken) {
       setTokens(accessToken, refreshToken)
       fetch('/api/auth/me', {
@@ -46,6 +55,12 @@ export default function Login() {
         </>
       }
     >
+      {oauthError && (
+        <Alert tone="danger" title="Falha na autenticação Google" className="mb-4">
+          Não foi possível completar a autenticação com o Google. Tente novamente ou utilize o
+          formulário de início de sessão.
+        </Alert>
+      )}
       <LoginForm />
     </AuthShell>
   )
