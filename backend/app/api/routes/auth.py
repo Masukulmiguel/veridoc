@@ -39,7 +39,8 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
 
 
 @router.post("/refresh", response_model=TokenResponse)
-def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> TokenResponse:
+@limiter.limit("20/minute")
+def refresh(request: Request, payload: RefreshRequest, db: Session = Depends(get_db)) -> TokenResponse:
     return auth_service.refresh_tokens(db, payload.refresh_token)
 
 
@@ -49,7 +50,8 @@ def me(user: User = Depends(get_current_user)) -> User:
 
 
 @router.post("/google", response_model=TokenResponse)
-def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
+@limiter.limit("10/minute")
+def google_login(request: Request, payload: GoogleLoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     claims = auth_service.verify_google_id_token(payload.id_token)
     user = auth_service.login_or_create_google(db, claims)
     return auth_service.issue_tokens(user, db)
@@ -88,5 +90,6 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
 
 
 @router.post("/reset-password")
-def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def reset_password(request: Request, payload: ResetPasswordRequest, db: Session = Depends(get_db)):
     return auth_service.reset_password(db, payload.token, payload.new_password)
