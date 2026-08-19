@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useVerification } from '@/hooks/useVerification'
 import { getErrorMessage } from '@/services/api'
 import { Button } from '@/components/ui/Button'
@@ -8,10 +8,10 @@ import { Label } from '@/components/ui/Label'
 import { Alert } from '@/components/ui/Alert'
 import { Spinner } from '@/components/ui/Spinner'
 import { VerificationResult } from '@/components/verification/VerificationResult'
+import { QRScanner } from '@/components/verification/QRScanner'
 
 export default function VerifyDocument() {
   const { codigo } = useParams<{ codigo: string }>()
-  const navigate = useNavigate()
   const verification = useVerification()
   const [code, setCode] = useState(codigo ?? '')
   const [documentId, setDocumentId] = useState('')
@@ -29,14 +29,18 @@ export default function VerifyDocument() {
     event.preventDefault()
     if (!code.trim() && !documentId.trim()) return
     runVerification({ code: code.trim() || undefined, documentId: documentId.trim() || undefined })
-    navigate('/verificar', { replace: true })
+  }
+
+  function handleQRScan(scannedCode: string) {
+    setCode(scannedCode)
+    setDocumentId('')
+    runVerification({ code: scannedCode })
   }
 
   function handleReset() {
     setCode('')
     setDocumentId('')
     verification.reset()
-    navigate('/verificar', { replace: true })
   }
 
   const showResult = verification.data && !verification.isPending
@@ -77,6 +81,8 @@ export default function VerifyDocument() {
                   <span className="text-xs font-medium uppercase tracking-wide text-navy-400">ou</span>
                   <div className="h-px flex-1 bg-navy-200" />
                 </div>
+
+                <QRScanner onScan={handleQRScan} />
 
                 <div>
                   <Label htmlFor="verify-id">ID do documento</Label>
