@@ -27,6 +27,9 @@ def _rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JS
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.limiter = limiter
+    logger.info("A criar tabelas na base de dados...")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Tabelas criadas com sucesso.")
     yield
 
 
@@ -91,10 +94,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Erro interno do servidor."},
     )
 
-
-@app.on_event("startup")
-def create_tables() -> None:
-    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/health")
