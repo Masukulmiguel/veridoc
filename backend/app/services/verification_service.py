@@ -24,10 +24,10 @@ STATUS_INVALID = "INVALID"
 
 MESSAGES = {
     STATUS_VALID: "Documento autêntico. O conteúdo confere com o emitido pela instituição emissora.",
-    STATUS_REVOKED: "Documento revogado pela instituição emissora.",
-    STATUS_EXPIRED: "Documento expirado. A sua validade terminou.",
-    STATUS_INVALID: "Documento inválido. O conteúdo ou a assinatura não conferem.",
-    "NOT_FOUND": "Documento não encontrado. Verifique o código e tente novamente.",
+    STATUS_REVOKED: "Este documento foi revogado pela instituição emissora.",
+    STATUS_EXPIRED: "Documento expirado. A sua validade cessou.",
+    STATUS_INVALID: "Documento inválido. O conteúdo ou a assinatura digital não conferem.",
+    "NOT_FOUND": "Documento não encontrado. Verifique o código ou identificador indicado.",
 }
 
 

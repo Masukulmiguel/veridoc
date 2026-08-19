@@ -56,7 +56,7 @@ export default function VerifyDocument() {
               Verificar documento
             </h1>
             <p className="mx-auto mt-2 max-w-md text-sm text-navy-500">
-              Introduza o código de validação ou o ID do documento recebido para confirmar a sua
+              Introduza o código de validação ou o identificador do documento para confirmar a sua
               autenticidade.
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function VerifyDocument() {
                 <QRScanner onScan={handleQRScan} />
 
                 <div>
-                  <Label htmlFor="verify-id">ID do documento</Label>
+                  <Label htmlFor="verify-id">Identificador do documento</Label>
                   <Input
                     id="verify-id"
                     value={documentId}
@@ -105,8 +105,9 @@ export default function VerifyDocument() {
                 </Button>
 
                 <p className="text-center text-xs leading-relaxed text-navy-400">
-                  A verificação cobre apenas documentos emitidos por instituições registadas na
-                  VeriDoc. A presença de um QR Code por si só não garante a autenticidade.
+                  A verificação abrange exclusivamente documentos emitidos por instituições
+                  registadas na VeriDoc. A presença de um código QR por si só não garante a
+                  autenticidade do documento.
                 </p>
               </form>
             </div>
@@ -116,12 +117,12 @@ export default function VerifyDocument() {
             {verification.isPending && (
               <div className="flex flex-col items-center gap-4 py-10 text-navy-500">
                 <Spinner size="lg" className="text-primary-600" />
-                <p className="text-sm">A verificar o documento…</p>
+                <p className="text-sm">A validar o documento…</p>
               </div>
             )}
 
             {verification.isError && (
-              <Alert tone="danger" title="Não foi possível validar este documento.">
+              <Alert tone="danger" title="Não foi possível validar o documento.">
                 {getErrorMessage(verification.error)}
               </Alert>
             )}
@@ -132,7 +133,7 @@ export default function VerifyDocument() {
           <p className="mt-8 text-center text-xs text-navy-400">
             É uma instituição?{' '}
             <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700">
-              Emita documentos na VeriDoc
+              Emita documentos com a VeriDoc
             </Link>
           </p>
         </div>

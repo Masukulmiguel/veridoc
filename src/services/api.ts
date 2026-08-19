@@ -132,13 +132,13 @@ export function getErrorMessage(error: unknown): string {
     const payload = error.response?.data as ApiErrorPayload | undefined
     if (payload?.detail) return payload.detail
     if (payload?.message) return payload.message
-    if (error.code === 'ECONNABORTED') return 'O servidor demorou demasiado a responder. Tente novamente.'
-    if (!error.response) return 'Não foi possível contactar o servidor. Verifique a sua ligação.'
+    if (error.code === 'ECONNABORTED') return 'O servidor excedeu o tempo limite de resposta. Tente novamente.'
+    if (!error.response) return 'Não foi possível estabelecer ligação ao servidor. Verifique a sua ligação à internet.'
     if (error.response.status === 401) return 'Sessão expirada. Inicie sessão novamente.'
-    if (error.response.status === 403) return 'Não tem permissão para realizar esta acção.'
+    if (error.response.status === 403) return 'Não possui permissões para realizar esta operação.'
     if (error.response.status === 404) return 'O recurso solicitado não foi encontrado.'
-    return `Ocorreu um erro inesperado (${error.response.status}).`
+    return `Ocorreu um erro inesperado (código ${error.response.status}).`
   }
   if (error instanceof Error) return error.message
-  return 'Ocorreu um erro inesperado.'
+  return 'Ocorreu um erro inesperado. Tente novamente.'
 }

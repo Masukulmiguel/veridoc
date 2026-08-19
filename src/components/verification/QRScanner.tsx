@@ -66,7 +66,7 @@ export function QRScanner({ onScan }: QRScannerProps) {
         leftIcon={<Camera className="size-5" />}
         onClick={() => setIsOpen(true)}
       >
-        Ler QR Code com a câmara
+        Ler código QR com a câmara
       </Button>
     )
   }
@@ -74,7 +74,7 @@ export function QRScanner({ onScan }: QRScannerProps) {
   return (
     <div className="rounded-2xl border border-navy-200 bg-white p-4 shadow-card">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold text-navy-900">Ler QR Code</p>
+        <p className="text-sm font-semibold text-navy-900">Leitura de código QR</p>
         <button
           type="button"
           onClick={handleClose}

@@ -20,11 +20,11 @@ export function VerificationResult({ result, onReset }: VerificationResultProps)
           <ShieldAlert className="size-9" />
         </div>
         <h2 className="font-display text-xl font-bold text-danger-700">
-          Não foi possível validar este documento.
+          Documento não encontrado
         </h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-danger-700/80">
-          O código ou identificador apresentado não corresponde a nenhum documento emitido pela
-          VeriDoc. Verifique novamente e tente outra vez.
+          O código ou identificador indicado não corresponde a qualquer documento emitido pela
+          VeriDoc. Verifique os dados introduzidos e tente novamente.
         </p>
         <Button variant="outline" className="mt-6" onClick={onReset}>
           Nova validação
@@ -45,7 +45,7 @@ export function VerificationResult({ result, onReset }: VerificationResultProps)
     REVOKED: {
       banner: 'bg-danger-50 border-danger-200',
       icon: <XCircle className="size-10 text-danger-600" />,
-      title: 'Este documento foi revogado.',
+      title: 'Este documento foi revogado',
       description: result.message,
       text: 'text-danger-700',
       badge: 'bg-danger-100 text-danger-700',
@@ -132,8 +132,8 @@ export function VerificationResult({ result, onReset }: VerificationResultProps)
       </div>
 
       <p className="rounded-xl border border-navy-100 bg-navy-50 px-4 py-3 text-center text-xs text-navy-500">
-        A validação foi registada na VeriDoc a {formatDateTime(result.verifiedAt)}. Este resultado
-        não atesta a autenticidade de documentos que não tenham sido emitidos pela plataforma.
+        A validação foi registada na VeriDoc a {formatDateTime(result.verifiedAt)}. O presente
+        resultado não certifica a autenticidade de documentos não emitidos pela plataforma.
       </p>
 
       <Button variant="outline" fullWidth onClick={onReset}>
