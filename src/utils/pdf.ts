@@ -151,7 +151,7 @@ export async function buildDocumentPdf(doc: VeriDocument, verificationUrl: strin
   function pushStr(s: string) {
     offsets.push(totalOffset)
     parts.push(s)
-    totalOffset += s.length
+    totalOffset += new TextEncoder().encode(s).length
   }
 
   function pushBinary(data: Uint8Array) {
@@ -159,8 +159,9 @@ export async function buildDocumentPdf(doc: VeriDocument, verificationUrl: strin
     totalOffset += data.length
   }
 
-  parts.push('%PDF-1.4\n%âãÏÓ\n')
-  totalOffset += '%PDF-1.4\n%âãÏÓ\n'.length
+  const header = '%PDF-1.4\n'
+  parts.push(header)
+  totalOffset += new TextEncoder().encode(header).length
 
   pushStr('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n')
   pushStr('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n')
