@@ -1,206 +1,206 @@
+import { jsPDF } from 'jspdf'
 import type { VeriDocument } from '@/types/document'
 import { DOCUMENT_TYPE_LABELS, formatDate } from './format'
 
-function escapePdfText(text: string): string {
-  return text
-    .replace(/\\/g, '\\\\')
-    .replace(/\(/g, '\\(')
-    .replace(/\)/g, '\\)')
-    .replace(/\n/g, ' ')
-}
+const NAVY = [18, 30, 69] as const
+const RED = [200, 16, 46] as const
+const LIGHT_GRAY = [245, 245, 245] as const
+const MID_GRAY = [153, 153, 153] as const
 
-function textLine(x: number, y: number, size: number, font: string, text: string): string {
-  return `BT\n/F${font} ${size} Tf\n${x} ${y} Td\n(${escapePdfText(text)}) Tj\nET\n`
-}
-
-function rect(x: number, y: number, w: number, h: number, r: number, g: number, b: number): string {
-  return `${r} ${g} ${b} rg\n${x} ${y} ${w} ${h} re f\n`
-}
-
-async function loadLogoAsJpeg(): Promise<{ jpegBytes: Uint8Array; width: number; height: number } | null> {
+async function loadLogoDataUrl(): Promise<string | null> {
   try {
     const response = await fetch('/logotipo.png')
     const blob = await response.blob()
-
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const el = new Image()
       el.onload = () => resolve(el)
       el.onerror = reject
       el.src = URL.createObjectURL(blob)
     })
-
-    const maxW = 400
-    const maxH = 130
+    const maxW = 160
+    const maxH = 52
     let w = img.naturalWidth
     let h = img.naturalHeight
-    if (w > maxW) {
-      h = Math.round((h * maxW) / w)
-      w = maxW
-    }
-    if (h > maxH) {
-      w = Math.round((w * maxH) / h)
-      h = maxH
-    }
-
+    if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW }
+    if (h > maxH) { w = Math.round((w * maxH) / h); h = maxH }
     const canvas = document.createElement('canvas')
     canvas.width = w
     canvas.height = h
     const ctx = canvas.getContext('2d')
     if (!ctx) return null
     ctx.drawImage(img, 0, 0, w, h)
-
-    const jpegBlob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.7)
-    })
-
-    if (!jpegBlob || jpegBlob.size > 100_000) return null
-
-    const buf = await jpegBlob.arrayBuffer()
-    return { jpegBytes: new Uint8Array(buf), width: w, height: h }
+    return canvas.toDataURL('image/png')
   } catch {
     return null
   }
 }
 
+function drawSectionHeader(doc: jsPDF, y: number, title: string): number {
+  doc.setFillColor(...LIGHT_GRAY)
+  doc.rect(40, y - 5, 155, 8, 'F')
+  doc.setFillColor(...RED)
+  doc.rect(40, y + 3, 155, 0.7, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.setTextColor(0, 0, 0)
+  doc.text(title, 50, y)
+  return y
+}
+
+function drawFieldRow(doc: jsPDF, y: number, label: string, value: string): number {
+  doc.setFont('helvetica', 'oblique')
+  doc.setFontSize(9)
+  doc.setTextColor(80, 80, 80)
+  doc.text(label, 50, y)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9)
+  doc.setTextColor(0, 0, 0)
+  doc.text(value, 200, y)
+  return y
+}
+
 export async function buildDocumentPdf(doc: VeriDocument, verificationUrl: string): Promise<Blob> {
   const fullUrl = `${verificationUrl}/${doc.verificationCode}`
 
-  const logo = await loadLogoAsJpeg()
+  const docPdf = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
 
-  let content = ''
+  const logoDataUrl = await loadLogoDataUrl()
 
-  content += rect(0, 760, 595, 82, 0.07, 0.13, 0.27)
-  content += rect(0, 757, 595, 3, 0.89, 0.10, 0.22)
-  content += rect(0, 754, 595, 1, 0.96, 0.77, 0.19)
+  // Header bar
+  docPdf.setFillColor(...NAVY)
+  docPdf.rect(0, 0, 595, 82, 'F')
+  docPdf.setFillColor(...RED)
+  docPdf.rect(0, 82, 595, 3, 'F')
+  docPdf.setFillColor(246, 196, 48)
+  docPdf.rect(0, 85, 595, 1, 'F')
 
-  if (logo) {
-    content += `q\n${logo.width} 0 0 ${logo.height} 30 770 cm\n/Img1 Do\nQ\n`
+  if (logoDataUrl) {
+    try {
+      docPdf.addImage(logoDataUrl, 'PNG', 30, 12, 130, 48)
+    } catch {
+      docPdf.setFont('helvetica', 'bold')
+      docPdf.setFontSize(36)
+      docPdf.setTextColor(255, 255, 255)
+      docPdf.text('V', 35, 60)
+    }
   } else {
-    content += textLine(35, 790, 36, '1', 'V')
+    docPdf.setFont('helvetica', 'bold')
+    docPdf.setFontSize(36)
+    docPdf.setTextColor(255, 255, 255)
+    docPdf.text('V', 35, 60)
   }
 
-  content += rect(420, 785, 150, 35, 0.89, 0.10, 0.22)
-  content += textLine(430, 797, 9, '1', 'DOCUMENTO')
-  content += textLine(430, 784, 11, '1', 'VERIFICADO')
+  // Verified badge
+  docPdf.setFillColor(...RED)
+  docPdf.roundedRect(420, 20, 150, 42, 4, 4, 'F')
+  docPdf.setFont('helvetica', 'bold')
+  docPdf.setFontSize(9)
+  docPdf.setTextColor(255, 255, 255)
+  docPdf.text('DOCUMENTO', 495, 37, { align: 'center' })
+  docPdf.setFontSize(13)
+  docPdf.text('VERIFICADO', 495, 53, { align: 'center' })
 
-  content += textLine(40, 730, 18, '1', doc.title)
-  content += textLine(40, 714, 10, '3', doc.institution.name)
-  content += rect(40, 706, 515, 0.5, 0.60, 0.60, 0.60)
+  let y = 115
 
-  content += rect(40, 680, 515, 22, 0.95, 0.95, 0.95)
-  content += textLine(50, 685, 10, '1', 'INFORMACOES DO DOCUMENTO')
-  content += rect(40, 678, 515, 2, 0.89, 0.10, 0.22)
+  // Title
+  docPdf.setFont('helvetica', 'bold')
+  docPdf.setFontSize(18)
+  docPdf.setTextColor(0, 0, 0)
+  docPdf.text(doc.title, 40, y)
+  y += 16
+
+  // Institution
+  docPdf.setFont('helvetica', 'oblique')
+  docPdf.setFontSize(10)
+  docPdf.setTextColor(80, 80, 80)
+  docPdf.text(doc.institution.name, 40, y)
+  y += 6
+
+  docPdf.setFillColor(...MID_GRAY)
+  docPdf.rect(40, y, 515, 0.5, 'F')
+  y += 14
+
+  // Document Info section
+  drawSectionHeader(docPdf, y, 'INFORMAÇÕES DO DOCUMENTO')
+  y += 18
 
   const fields: Array<[string, string]> = [
     ['Tipo de documento', DOCUMENT_TYPE_LABELS[doc.type] ?? doc.type],
-    ['Numero', doc.number],
+    ['Número', doc.number],
     ['Titular', doc.holderName],
-    ['Data de emissao', formatDate(doc.issuedAt)],
+    ['Data de emissão', formatDate(doc.issuedAt)],
     ['Estado', doc.status],
-    ['Codigo de validacao', doc.verificationCode],
+    ['Código de validação', doc.verificationCode],
   ]
 
-  let y = 660
   for (const [label, value] of fields) {
-    content += textLine(50, y, 9, '3', `${label}:`)
-    content += textLine(200, y, 9, '1', value)
-    y -= 16
+    drawFieldRow(docPdf, y, `${label}:`, value)
+    y += 16
   }
 
-  content += rect(40, y - 5, 515, 22, 0.95, 0.95, 0.95)
-  content += textLine(50, y, 10, '1', 'SEGURANCA E INTEGRIDADE')
-  content += rect(40, y - 7, 515, 2, 0.89, 0.10, 0.22)
-  y -= 28
-  content += textLine(50, y, 8, '3', 'Hash SHA-256:')
-  content += textLine(130, y, 6, '4', doc.contentHash.slice(0, 80))
-  y -= 12
-  content += textLine(130, y, 6, '4', doc.contentHash.slice(80, 160))
+  y += 8
 
-  y -= 24
-  content += rect(40, y - 5, 515, 22, 0.95, 0.95, 0.95)
-  content += textLine(50, y, 10, '1', 'ASSINATURA DIGITAL')
-  content += rect(40, y - 7, 515, 2, 0.89, 0.10, 0.22)
-  y -= 28
-  content += textLine(50, y, 8, '3', `Algoritmo: ${doc.signature.algorithm}`)
-  y -= 14
-  content += textLine(50, y, 8, '3', `Assinado por: ${doc.signature.signedBy}`)
-  y -= 14
-  content += textLine(50, y, 8, '3', `Data: ${formatDate(doc.signature.signedAt)}`)
+  // Security section
+  drawSectionHeader(docPdf, y, 'SEGURANÇA E INTEGRIDADE')
+  y += 18
+  docPdf.setFont('helvetica', 'oblique')
+  docPdf.setFontSize(8)
+  docPdf.setTextColor(80, 80, 80)
+  docPdf.text('Hash SHA-256:', 50, y)
+  docPdf.setFont('courier', 'normal')
+  docPdf.setFontSize(6)
+  docPdf.setTextColor(0, 0, 0)
+  const hashLine1 = doc.contentHash.slice(0, 80)
+  const hashLine2 = doc.contentHash.slice(80, 160)
+  docPdf.text(hashLine1, 130, y)
+  y += 10
+  if (hashLine2) docPdf.text(hashLine2, 130, y)
+  y += 14
 
-  y -= 30
-  content += rect(40, y - 5, 515, 22, 0.95, 0.95, 0.95)
-  content += textLine(50, y, 10, '1', 'VALIDACAO DO DOCUMENTO')
-  content += rect(40, y - 7, 515, 2, 0.89, 0.10, 0.22)
-  y -= 28
-  content += textLine(50, y, 9, '3', `Aceda a: ${fullUrl}`)
-  y -= 16
-  content += textLine(50, y, 9, '1', `Codigo: ${doc.verificationCode}`)
+  // Signature section
+  drawSectionHeader(docPdf, y, 'ASSINATURA DIGITAL')
+  y += 18
+  docPdf.setFont('helvetica', 'oblique')
+  docPdf.setFontSize(8)
+  docPdf.setTextColor(80, 80, 80)
+  docPdf.text(`Algoritmo: ${doc.signature.algorithm}`, 50, y)
+  y += 12
+  docPdf.text(`Assinado por: ${doc.signature.signedBy}`, 50, y)
+  y += 12
+  docPdf.text(`Data: ${formatDate(doc.signature.signedAt)}`, 50, y)
+  y += 16
 
-  content += rect(0, 0, 595, 45, 0.07, 0.13, 0.27)
-  content += rect(0, 45, 595, 3, 0.89, 0.10, 0.22)
-  content += rect(0, 48, 595, 1, 0.96, 0.77, 0.19)
-  content += textLine(40, 24, 7, '3', 'VeriDoc - Plataforma Oficial de Documentos Digitais da Republica de Angola')
-  content += textLine(40, 12, 7, '4', `Emitido em ${formatDate(doc.issuedAt)} | Verificado automaticamente`)
+  // Verification section
+  drawSectionHeader(docPdf, y, 'VALIDAÇÃO DO DOCUMENTO')
+  y += 18
+  docPdf.setFont('helvetica', 'oblique')
+  docPdf.setFontSize(9)
+  docPdf.setTextColor(80, 80, 80)
+  docPdf.text(`Aceda a: ${fullUrl}`, 50, y)
+  y += 14
+  docPdf.setFont('helvetica', 'bold')
+  docPdf.setFontSize(9)
+  docPdf.setTextColor(0, 0, 0)
+  docPdf.text(`Código: ${doc.verificationCode}`, 50, y)
 
-  const contentBytes = new TextEncoder().encode(content)
+  // Footer bar
+  docPdf.setFillColor(...NAVY)
+  docPdf.rect(0, 797, 595, 45, 'F')
+  docPdf.setFillColor(...RED)
+  docPdf.rect(0, 794, 595, 3, 'F')
+  docPdf.setFillColor(246, 196, 48)
+  docPdf.rect(0, 792, 595, 2, 'F')
 
-  const parts: (string | Uint8Array)[] = []
-  const offsets: number[] = []
-  let totalOffset = 0
+  docPdf.setFont('helvetica', 'oblique')
+  docPdf.setFontSize(7)
+  docPdf.setTextColor(200, 200, 200)
+  docPdf.text('VeriDoc - Plataforma Oficial de Documentos Digitais da República de Angola', 40, 815)
+  docPdf.setFont('courier', 'normal')
+  docPdf.setFontSize(6)
+  docPdf.setTextColor(160, 160, 160)
+  docPdf.text(`Emitido em ${formatDate(doc.issuedAt)} | Verificado automaticamente`, 40, 827)
 
-  function pushStr(s: string) {
-    offsets.push(totalOffset)
-    parts.push(s)
-    totalOffset += new TextEncoder().encode(s).length
-  }
-
-  function pushBinary(data: Uint8Array) {
-    parts.push(data)
-    totalOffset += data.length
-  }
-
-  const header = '%PDF-1.4\n'
-  parts.push(header)
-  totalOffset += new TextEncoder().encode(header).length
-
-  pushStr('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n')
-  pushStr('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n')
-
-  if (logo) {
-    pushStr(`3 0 obj\n<< /Type /XObject /Subtype /Image /Width ${logo.width} /Height ${logo.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.jpegBytes.length} >>\nstream\n`)
-    pushBinary(logo.jpegBytes)
-    parts.push('\nendstream\nendobj\n')
-    totalOffset += '\nendstream\nendobj\n'.length
-
-    pushStr(`4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 6 0 R /F2 7 0 R /F3 8 0 R /F4 9 0 R >> /XObject << /Img1 3 0 R >> >> /Contents 5 0 R >>\nendobj\n`)
-  } else {
-    pushStr(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R /F4 8 0 R >> >> /Contents 4 0 R >>\nendobj\n`)
-  }
-
-  const contentId = logo ? 5 : 4
-  pushStr(`${contentId} 0 obj\n<< /Length ${contentBytes.length} >>\nstream\n`)
-  pushBinary(contentBytes)
-  parts.push('\nendstream\nendobj\n')
-  totalOffset += '\nendstream\nendobj\n'.length
-
-  const fontStart = logo ? 6 : 5
-  pushStr(`${fontStart} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n`)
-  pushStr(`${fontStart + 1} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n`)
-  pushStr(`${fontStart + 2} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>\nendobj\n`)
-  pushStr(`${fontStart + 3} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>\nendobj\n`)
-
-  const objCount = fontStart + 4
-  const xrefOffset = totalOffset
-  let xref = `xref\n0 ${objCount}\n`
-  xref += '0000000000 65535 f \n'
-  for (const offset of offsets) {
-    xref += `${String(offset).padStart(10, '0')} 00000 n \n`
-  }
-  parts.push(xref)
-  parts.push(`trailer\n<< /Size ${objCount} /Root 1 0 R >>\n`)
-  parts.push(`startxref\n${xrefOffset}\n%%EOF\n`)
-
-  return new Blob(parts as BlobPart[], { type: 'application/pdf' })
+  return docPdf.output('blob')
 }
 
 export function triggerDownload(blob: Blob, filename: string): void {
