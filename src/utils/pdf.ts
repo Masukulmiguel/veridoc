@@ -160,13 +160,13 @@ export async function buildDocumentPdf(doc: VeriDocument, verificationUrl: strin
   }
 
   parts.push('%PDF-1.4\n%âãÏÓ\n')
+  totalOffset += '%PDF-1.4\n%âãÏÓ\n'.length
 
   pushStr('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n')
   pushStr('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n')
 
   if (logo) {
     pushStr(`3 0 obj\n<< /Type /XObject /Subtype /Image /Width ${logo.width} /Height ${logo.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.jpegBytes.length} >>\nstream\n`)
-    offsets.push(totalOffset)
     pushBinary(logo.jpegBytes)
     parts.push('\nendstream\nendobj\n')
     totalOffset += '\nendstream\nendobj\n'.length
@@ -178,7 +178,6 @@ export async function buildDocumentPdf(doc: VeriDocument, verificationUrl: strin
 
   const contentId = logo ? 5 : 4
   pushStr(`${contentId} 0 obj\n<< /Length ${contentBytes.length} >>\nstream\n`)
-  offsets.push(totalOffset)
   pushBinary(contentBytes)
   parts.push('\nendstream\nendobj\n')
   totalOffset += '\nendstream\nendobj\n'.length
