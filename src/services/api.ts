@@ -130,8 +130,14 @@ api.interceptors.response.use(
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const payload = error.response?.data as ApiErrorPayload | undefined
-    if (payload?.detail) return payload.detail
-    if (payload?.message) return payload.message
+    if (payload?.detail) {
+      if (Array.isArray(payload.detail)) {
+        return payload.detail.map((d: { msg?: string }) => d.msg ?? 'Erro de validação').join('; ')
+      }
+      if (typeof payload.detail === 'string') return payload.detail
+      if (typeof payload.detail === 'object') return JSON.stringify(payload.detail)
+    }
+    if (payload?.message) return String(payload.message)
     if (error.code === 'ECONNABORTED') return 'O servidor excedeu o tempo limite de resposta. Tente novamente.'
     if (!error.response) return 'Não foi possível estabelecer ligação ao servidor. Verifique a sua ligação à internet.'
     if (error.response.status === 401) return 'Sessão expirada. Inicie sessão novamente.'

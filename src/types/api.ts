@@ -7,7 +7,7 @@ export interface Paginated<T> {
 }
 
 export interface ApiErrorPayload {
-  detail?: string
+  detail?: string | Array<{ loc?: string[]; msg?: string; type?: string }>
   message?: string
   code?: string
 }
