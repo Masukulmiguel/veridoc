@@ -4,6 +4,7 @@ import { CheckCircle2, FileDown, FilePlus2, ShieldCheck } from 'lucide-react'
 import { useCreateDocument } from '@/hooks/useDocuments'
 import { getErrorMessage } from '@/services/api'
 import { verificationUrl } from '@/services/config'
+import { fetchInstitutionLogoDataUrl } from '@/services/institution.service'
 import { buildDocumentPdf, triggerDownload } from '@/utils/pdf'
 import { formatDateTime } from '@/utils/format'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -25,7 +26,8 @@ export default function CreateDocument() {
 
   async function handleDownload() {
     if (!issued) return
-    const blob = await buildDocumentPdf(issued, verificationUrl(issued.verificationCode))
+    const logo = await fetchInstitutionLogoDataUrl(issued.institution.id)
+    const blob = await buildDocumentPdf(issued, verificationUrl(issued.verificationCode), logo)
     triggerDownload(blob, `${issued.number}.pdf`)
   }
 

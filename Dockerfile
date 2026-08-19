@@ -23,6 +23,9 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
+# Copy public assets for server-side PDF generation
+COPY public/ /app/public/
+
 # Setup frontend
 COPY --from=frontend-build /app/dist /usr/share/nginx/html
 

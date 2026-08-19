@@ -27,7 +27,7 @@ class Institution(Base):
     city: Mapped[str | None] = mapped_column(String(120), nullable=True)
     country: Mapped[str | None] = mapped_column(String(120), nullable=True)
     website: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    logo: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    logo: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="ACTIVE")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(

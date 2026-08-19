@@ -5,6 +5,7 @@ import { useDocument, useRevokeDocument } from '@/hooks/useDocuments'
 import { useAuth } from '@/hooks/useAuth'
 import { getErrorMessage } from '@/services/api'
 import { verificationUrl } from '@/services/config'
+import { fetchInstitutionLogoDataUrl } from '@/services/institution.service'
 import { buildDocumentPdf, triggerDownload } from '@/utils/pdf'
 import { DOCUMENT_TYPE_LABELS, formatDateTime } from '@/utils/format'
 import { Button } from '@/components/ui/Button'
@@ -60,7 +61,8 @@ export default function DocumentDetails() {
   const handleDownload = async () => {
     setDownloadError(null)
     try {
-      const blob = await buildDocumentPdf(document, verificationUrl(document.verificationCode))
+      const logo = await fetchInstitutionLogoDataUrl(document.institution.id)
+      const blob = await buildDocumentPdf(document, verificationUrl(document.verificationCode), logo)
       triggerDownload(blob, `${document.number}.pdf`)
     } catch (err) {
       console.error('PDF download error:', err)

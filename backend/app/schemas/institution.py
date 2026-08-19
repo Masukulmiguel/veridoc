@@ -29,4 +29,3 @@ class InstitutionUpdate(BaseModel):
     city: str | None = Field(default=None, max_length=120)
     country: str | None = Field(default=None, max_length=120)
     website: str | None = Field(default=None, max_length=255)
-    logo: str | None = Field(default=None, max_length=500)

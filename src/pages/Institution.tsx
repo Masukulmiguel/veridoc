@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Building2, Pencil, Save, X } from 'lucide-react'
-import { getInstitution, updateInstitution } from '@/services/institution.service'
+import { Building2, Camera, Pencil, Save, Trash2, X } from 'lucide-react'
+import {
+  getInstitution,
+  updateInstitution,
+  uploadInstitutionLogo,
+  deleteInstitutionLogo,
+} from '@/services/institution.service'
 import { getErrorMessage } from '@/services/api'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDate } from '@/utils/format'
@@ -31,11 +36,18 @@ const institutionSchema = z.object({
 
 type InstitutionFormValues = z.infer<typeof institutionSchema>
 
+const MAX_FILE_SIZE = 500 * 1024
+const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml']
+
 export default function Institution() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [editing, setEditing] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [logoError, setLogoError] = useState<string | null>(null)
+  const [logoSuccess, setLogoSuccess] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   const { data: institution, isLoading, isError } = useQuery({
     queryKey: ['institution'],
@@ -82,6 +94,47 @@ export default function Institution() {
       setEditing(false)
     } catch (error) {
       setSaveError(getErrorMessage(error))
+    }
+  }
+
+  async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setLogoError(null)
+    setLogoSuccess(false)
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setLogoError('Formato não suportado. Use PNG, JPG ou SVG.')
+      return
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setLogoError('Ficheiro demasiado grande. Máximo: 500 KB.')
+      return
+    }
+
+    setUploadingLogo(true)
+    try {
+      await uploadInstitutionLogo(file)
+      queryClient.invalidateQueries({ queryKey: ['institution'] })
+      setLogoSuccess(true)
+      setTimeout(() => setLogoSuccess(false), 3000)
+    } catch (error) {
+      setLogoError(getErrorMessage(error))
+    } finally {
+      setUploadingLogo(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleLogoDelete() {
+    setLogoError(null)
+    setLogoSuccess(false)
+    try {
+      await deleteInstitutionLogo()
+      queryClient.invalidateQueries({ queryKey: ['institution'] })
+    } catch (error) {
+      setLogoError(getErrorMessage(error))
     }
   }
 
@@ -203,6 +256,82 @@ export default function Institution() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader
+          title="Identidade da Instituição"
+          description="Logotipo que aparece nos documentos emitidos."
+        />
+        <CardContent>
+          <div className="flex flex-col items-start gap-6 sm:flex-row">
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative flex size-32 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-navy-200 bg-navy-50">
+                {institution.logo ? (
+                  <img
+                    src={institution.logo}
+                    alt={`Logotipo de ${institution.legalName}`}
+                    className="size-full object-contain p-2"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-navy-400">
+                    <Building2 className="size-8" />
+                    <span className="text-[10px]">Sem logotipo</span>
+                  </div>
+                )}
+                {uploadingLogo && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                    <div className="size-6 animate-spin rounded-full border-2 border-navy-300 border-t-primary-600" />
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml"
+                onChange={handleLogoUpload}
+                className="hidden"
+                aria-label="Carregar logotipo"
+              />
+            </div>
+
+            <div className="flex-1 space-y-3">
+              <p className="text-sm text-navy-600">
+                O logotipo da instituição será apresentado lado a lado com o logotipo VeriDoc
+                nos documentos emitidos.
+              </p>
+              <p className="text-xs text-navy-400">
+                Formatos: PNG, JPG ou SVG. Tamanho máximo: 500 KB.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Camera className="size-3.5" />}
+                  onClick={() => fileInputRef.current?.click()}
+                  isLoading={uploadingLogo}
+                >
+                  {institution.logo ? 'Substituir logotipo' : 'Carregar logotipo'}
+                </Button>
+                {institution.logo && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<Trash2 className="size-3.5" />}
+                    onClick={handleLogoDelete}
+                    className="text-danger-600 hover:text-danger-700"
+                  >
+                    Remover
+                  </Button>
+                )}
+              </div>
+              {logoError && <Alert tone="danger">{logoError}</Alert>}
+              {logoSuccess && (
+                <Alert tone="success">Logotipo atualizado com sucesso.</Alert>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

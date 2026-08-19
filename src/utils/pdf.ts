@@ -1,206 +1,214 @@
 import { jsPDF } from 'jspdf'
 import type { VeriDocument } from '@/types/document'
 import { DOCUMENT_TYPE_LABELS, formatDate } from './format'
+import { api } from '@/services/api'
 
-const NAVY = [18, 30, 69] as const
-const RED = [200, 16, 46] as const
-const LIGHT_GRAY = [245, 245, 245] as const
-const MID_GRAY = [153, 153, 153] as const
+function dataUrlToImage(dataUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = dataUrl
+  })
+}
 
-async function loadLogoDataUrl(): Promise<string | null> {
+async function fetchImageAsDataUrl(path: string): Promise<string | null> {
   try {
-    const response = await fetch('/logotipo.png')
-    const blob = await response.blob()
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image()
-      el.onload = () => resolve(el)
-      el.onerror = reject
-      el.src = URL.createObjectURL(blob)
+    const res = await fetch(path)
+    if (!res.ok) return null
+    const blob = await res.blob()
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.readAsDataURL(blob)
     })
-    const maxW = 160
-    const maxH = 52
-    let w = img.naturalWidth
-    let h = img.naturalHeight
-    if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW }
-    if (h > maxH) { w = Math.round((w * maxH) / h); h = maxH }
-    const canvas = document.createElement('canvas')
-    canvas.width = w
-    canvas.height = h
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-    ctx.drawImage(img, 0, 0, w, h)
-    return canvas.toDataURL('image/png')
   } catch {
     return null
   }
 }
 
 function drawSectionHeader(doc: jsPDF, y: number, title: string): number {
-  doc.setFillColor(...LIGHT_GRAY)
-  doc.rect(40, y - 5, 155, 8, 'F')
-  doc.setFillColor(...RED)
-  doc.rect(40, y + 3, 155, 0.7, 'F')
+  doc.setFillColor(240, 240, 240)
+  doc.rect(40, y - 4, 515, 9, 'F')
+  doc.setFillColor(200, 16, 46)
+  doc.rect(40, y + 5, 515, 0.6, 'F')
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10)
-  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(9)
+  doc.setTextColor(40, 40, 40)
   doc.text(title, 50, y)
   return y
 }
 
-function drawFieldRow(doc: jsPDF, y: number, label: string, value: string): number {
+function drawField(doc: jsPDF, y: number, label: string, value: string, bold = false): number {
   doc.setFont('helvetica', 'oblique')
-  doc.setFontSize(9)
-  doc.setTextColor(80, 80, 80)
+  doc.setFontSize(8.5)
+  doc.setTextColor(100, 100, 100)
   doc.text(label, 50, y)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
-  doc.setTextColor(0, 0, 0)
-  doc.text(value, 200, y)
+  doc.setFont('helvetica', bold ? 'bold' : 'normal')
+  doc.setFontSize(8.5)
+  doc.setTextColor(20, 20, 20)
+  doc.text(value, 200, y, { maxWidth: 340 })
   return y
 }
 
-export async function buildDocumentPdf(doc: VeriDocument, verificationUrl: string): Promise<Blob> {
+export async function buildDocumentPdf(
+  doc: VeriDocument,
+  verificationUrl: string,
+  institutionLogoDataUrl?: string | null,
+): Promise<Blob> {
   const fullUrl = `${verificationUrl}/${doc.verificationCode}`
 
-  const docPdf = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
+  const pdf = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
+  const pageW = 595
+  const pageH = 842
 
-  const logoDataUrl = await loadLogoDataUrl()
-
-  // Header bar
-  docPdf.setFillColor(...NAVY)
-  docPdf.rect(0, 0, 595, 82, 'F')
-  docPdf.setFillColor(...RED)
-  docPdf.rect(0, 82, 595, 3, 'F')
-  docPdf.setFillColor(246, 196, 48)
-  docPdf.rect(0, 85, 595, 1, 'F')
-
-  if (logoDataUrl) {
+  // Load background image
+  const bgDataUrl = await fetchImageAsDataUrl('/modelo-fundo-doc.png')
+  if (bgDataUrl) {
     try {
-      docPdf.addImage(logoDataUrl, 'PNG', 30, 12, 130, 48)
-    } catch {
-      docPdf.setFont('helvetica', 'bold')
-      docPdf.setFontSize(36)
-      docPdf.setTextColor(255, 255, 255)
-      docPdf.text('V', 35, 60)
-    }
-  } else {
-    docPdf.setFont('helvetica', 'bold')
-    docPdf.setFontSize(36)
-    docPdf.setTextColor(255, 255, 255)
-    docPdf.text('V', 35, 60)
+      const bgImg = await dataUrlToImage(bgDataUrl)
+      pdf.addImage(bgImg, 'PNG', 0, 0, pageW, pageH)
+    } catch { /* fallback: no background */ }
   }
 
-  // Verified badge
-  docPdf.setFillColor(...RED)
-  docPdf.roundedRect(420, 20, 150, 42, 4, 4, 'F')
-  docPdf.setFont('helvetica', 'bold')
-  docPdf.setFontSize(9)
-  docPdf.setTextColor(255, 255, 255)
-  docPdf.text('DOCUMENTO', 495, 37, { align: 'center' })
-  docPdf.setFontSize(13)
-  docPdf.text('VERIFICADO', 495, 53, { align: 'center' })
+  // Load VeriDoc logo
+  const veridocLogoDataUrl = await fetchImageAsDataUrl('/logotipo.png')
 
-  let y = 115
+  // --- HEADER ZONE (y: 30-100) ---
+  // VeriDoc logo (left)
+  if (veridocLogoDataUrl) {
+    try {
+      const logoImg = await dataUrlToImage(veridocLogoDataUrl)
+      pdf.addImage(logoImg, 'PNG', 40, 25, 100, 50)
+    } catch { /* skip */ }
+  }
 
-  // Title
-  docPdf.setFont('helvetica', 'bold')
-  docPdf.setFontSize(18)
-  docPdf.setTextColor(0, 0, 0)
-  docPdf.text(doc.title, 40, y)
+  // Institution logo (right)
+  if (institutionLogoDataUrl) {
+    try {
+      const instImg = await dataUrlToImage(institutionLogoDataUrl)
+      pdf.addImage(instImg, 'PNG', pageW - 140, 25, 100, 50)
+    } catch { /* skip */ }
+  }
+
+  // --- QR CODE (top right area) ---
+  try {
+    const qrRes = await api.get(`/documents/${doc.id}/qrcode`, { responseType: 'blob' })
+    if (qrRes.data) {
+      const qrDataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.readAsDataURL(qrRes.data)
+      })
+      const qrImg = await dataUrlToImage(qrDataUrl)
+      pdf.addImage(qrImg, 'PNG', pageW - 130, 80, 90, 90)
+      pdf.setFont('helvetica', 'oblique')
+      pdf.setFontSize(6)
+      pdf.setTextColor(120, 120, 120)
+      pdf.text('Verifique a autenticidade', pageW - 85, 175, { align: 'center' })
+      pdf.text('deste documento', pageW - 85, 182, { align: 'center' })
+    }
+  } catch { /* skip QR */ }
+
+  // --- TITLE ZONE (y: ~120) ---
+  let y = 130
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(20)
+  pdf.setTextColor(18, 30, 69)
+  pdf.text(doc.title.toUpperCase(), pageW / 2, y, { align: 'center' })
+  y += 20
+
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(10)
+  pdf.setTextColor(100, 100, 100)
+  pdf.text(doc.institution.name, pageW / 2, y, { align: 'center' })
+  y += 25
+
+  // Divider line
+  pdf.setFillColor(200, 16, 46)
+  pdf.rect(40, y, 515, 1, 'F')
+  y += 20
+
+  // --- INFORMACOES DO DOCUMENTO ---
+  drawSectionHeader(pdf, y, 'INFORMAÇÕES DO DOCUMENTO')
   y += 16
 
-  // Institution
-  docPdf.setFont('helvetica', 'oblique')
-  docPdf.setFontSize(10)
-  docPdf.setTextColor(80, 80, 80)
-  docPdf.text(doc.institution.name, 40, y)
-  y += 6
-
-  docPdf.setFillColor(...MID_GRAY)
-  docPdf.rect(40, y, 515, 0.5, 'F')
-  y += 14
-
-  // Document Info section
-  drawSectionHeader(docPdf, y, 'INFORMAÇÕES DO DOCUMENTO')
-  y += 18
-
   const fields: Array<[string, string]> = [
-    ['Tipo de documento', DOCUMENT_TYPE_LABELS[doc.type] ?? doc.type],
-    ['Número', doc.number],
-    ['Titular', doc.holderName],
-    ['Data de emissão', formatDate(doc.issuedAt)],
-    ['Estado', doc.status],
-    ['Código de validação', doc.verificationCode],
+    ['Tipo de documento:', DOCUMENT_TYPE_LABELS[doc.type] ?? doc.type],
+    ['Número:', doc.number],
+    ['Titular:', doc.holderName],
+    ['Data de emissão:', formatDate(doc.issuedAt)],
+    ['Estado:', doc.status],
+    ['Código de validação:', doc.verificationCode],
   ]
 
   for (const [label, value] of fields) {
-    drawFieldRow(docPdf, y, `${label}:`, value)
-    y += 16
+    drawField(pdf, y, label, value)
+    y += 14
   }
 
-  y += 8
-
-  // Security section
-  drawSectionHeader(docPdf, y, 'SEGURANÇA E INTEGRIDADE')
-  y += 18
-  docPdf.setFont('helvetica', 'oblique')
-  docPdf.setFontSize(8)
-  docPdf.setTextColor(80, 80, 80)
-  docPdf.text('Hash SHA-256:', 50, y)
-  docPdf.setFont('courier', 'normal')
-  docPdf.setFontSize(6)
-  docPdf.setTextColor(0, 0, 0)
-  const hashLine1 = doc.contentHash.slice(0, 80)
-  const hashLine2 = doc.contentHash.slice(80, 160)
-  docPdf.text(hashLine1, 130, y)
   y += 10
-  if (hashLine2) docPdf.text(hashLine2, 130, y)
-  y += 14
 
-  // Signature section
-  drawSectionHeader(docPdf, y, 'ASSINATURA DIGITAL')
-  y += 18
-  docPdf.setFont('helvetica', 'oblique')
-  docPdf.setFontSize(8)
-  docPdf.setTextColor(80, 80, 80)
-  docPdf.text(`Algoritmo: ${doc.signature.algorithm}`, 50, y)
-  y += 12
-  docPdf.text(`Assinado por: ${doc.signature.signedBy}`, 50, y)
-  y += 12
-  docPdf.text(`Data: ${formatDate(doc.signature.signedAt)}`, 50, y)
+  // --- SEGURANCA E INTEGRIDADE ---
+  drawSectionHeader(pdf, y, 'SEGURANÇA E INTEGRIDADE')
+  y += 16
+  pdf.setFont('helvetica', 'oblique')
+  pdf.setFontSize(8)
+  pdf.setTextColor(100, 100, 100)
+  pdf.text('Hash SHA-256:', 50, y)
+  pdf.setFont('courier', 'normal')
+  pdf.setFontSize(6)
+  pdf.setTextColor(20, 20, 20)
+  const hash1 = doc.contentHash.slice(0, 80)
+  const hash2 = doc.contentHash.slice(80, 160)
+  pdf.text(hash1, 130, y)
+  y += 10
+  if (hash2) pdf.text(hash2, 130, y)
   y += 16
 
-  // Verification section
-  drawSectionHeader(docPdf, y, 'VALIDAÇÃO DO DOCUMENTO')
-  y += 18
-  docPdf.setFont('helvetica', 'oblique')
-  docPdf.setFontSize(9)
-  docPdf.setTextColor(80, 80, 80)
-  docPdf.text(`Aceda a: ${fullUrl}`, 50, y)
+  // --- ASSINATURA DIGITAL ---
+  drawSectionHeader(pdf, y, 'ASSINATURA DIGITAL')
+  y += 16
+  pdf.setFont('helvetica', 'oblique')
+  pdf.setFontSize(8)
+  pdf.setTextColor(100, 100, 100)
+  pdf.text(`Algoritmo: ${doc.signature.algorithm}`, 50, y)
+  y += 12
+  pdf.text(`Assinado por: ${doc.signature.signedBy}`, 50, y)
+  y += 12
+  pdf.text(`Data: ${formatDate(doc.signature.signedAt)}`, 50, y)
+  y += 20
+
+  // --- VALIDACAO DO DOCUMENTO ---
+  drawSectionHeader(pdf, y, 'VALIDAÇÃO DO DOCUMENTO')
+  y += 16
+  pdf.setFont('helvetica', 'oblique')
+  pdf.setFontSize(8)
+  pdf.setTextColor(100, 100, 100)
+  pdf.text(`Aceda a: ${fullUrl}`, 50, y)
   y += 14
-  docPdf.setFont('helvetica', 'bold')
-  docPdf.setFontSize(9)
-  docPdf.setTextColor(0, 0, 0)
-  docPdf.text(`Código: ${doc.verificationCode}`, 50, y)
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(9)
+  pdf.setTextColor(20, 20, 20)
+  pdf.text(`Código: ${doc.verificationCode}`, 50, y)
 
-  // Footer bar
-  docPdf.setFillColor(...NAVY)
-  docPdf.rect(0, 797, 595, 45, 'F')
-  docPdf.setFillColor(...RED)
-  docPdf.rect(0, 794, 595, 3, 'F')
-  docPdf.setFillColor(246, 196, 48)
-  docPdf.rect(0, 792, 595, 2, 'F')
+  // --- FOOTER ZONE ---
+  const footerY = pageH - 40
+  pdf.setFillColor(18, 30, 69)
+  pdf.rect(0, footerY - 5, pageW, 45, 'F')
+  pdf.setFillColor(200, 16, 46)
+  pdf.rect(0, footerY - 7, pageW, 2, 'F')
 
-  docPdf.setFont('helvetica', 'oblique')
-  docPdf.setFontSize(7)
-  docPdf.setTextColor(200, 200, 200)
-  docPdf.text('VeriDoc - Plataforma Oficial de Documentos Digitais da República de Angola', 40, 815)
-  docPdf.setFont('courier', 'normal')
-  docPdf.setFontSize(6)
-  docPdf.setTextColor(160, 160, 160)
-  docPdf.text(`Emitido em ${formatDate(doc.issuedAt)} | Verificado automaticamente`, 40, 827)
+  pdf.setFont('helvetica', 'oblique')
+  pdf.setFontSize(7)
+  pdf.setTextColor(200, 200, 200)
+  pdf.text('VeriDoc - Plataforma Oficial de Documentos Digitais da República de Angola', pageW / 2, footerY + 12, { align: 'center' })
+  pdf.setFont('courier', 'normal')
+  pdf.setFontSize(6)
+  pdf.setTextColor(160, 160, 160)
+  pdf.text(`Emitido em ${formatDate(doc.issuedAt)} | Verificado automaticamente`, pageW / 2, footerY + 24, { align: 'center' })
 
-  return docPdf.output('blob')
+  return pdf.output('blob')
 }
 
 export function triggerDownload(blob: Blob, filename: string): void {

@@ -5,6 +5,7 @@ import { useDocuments, useRevokeDocument } from '@/hooks/useDocuments'
 import { useAuth } from '@/hooks/useAuth'
 import { getErrorMessage } from '@/services/api'
 import { verificationUrl } from '@/services/config'
+import { fetchInstitutionLogoDataUrl } from '@/services/institution.service'
 import { buildDocumentPdf, triggerDownload } from '@/utils/pdf'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
@@ -62,7 +63,8 @@ export default function Documents() {
   const revokeMutation = useRevokeDocument()
 
   async function handleDownload(document: VeriDocument) {
-    const blob = await buildDocumentPdf(document, verificationUrl(document.verificationCode))
+    const logo = await fetchInstitutionLogoDataUrl(document.institution.id)
+    const blob = await buildDocumentPdf(document, verificationUrl(document.verificationCode), logo)
     triggerDownload(blob, `${document.number}.pdf`)
   }
 

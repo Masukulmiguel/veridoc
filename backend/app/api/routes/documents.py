@@ -126,7 +126,12 @@ def document_pdf(
 ) -> Response:
     doc = document_service.get_document(db, document_id, user.institution_id)
     qr_png = qr_service.generate_qr_png(doc.verification_code)
-    pdf_buffer = pdf_service.generate_document_pdf(doc, doc.institution, qr_png)
+    pdf_buffer = pdf_service.generate_document_pdf(
+        doc,
+        doc.institution,
+        qr_png,
+        institution_logo_data_url=doc.institution.logo,
+    )
     return Response(
         content=pdf_buffer.getvalue(),
         media_type="application/pdf",
