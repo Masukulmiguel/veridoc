@@ -1,4 +1,4 @@
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
@@ -85,7 +85,8 @@ def google_callback(request: Request, code: str = Query(...), db: Session = Depe
     except HTTPException as exc:
         import logging
         logging.getLogger(__name__).error("Google OAuth HTTP error: %s - %s", exc.status_code, exc.detail)
-        return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=error&reason={exc.detail}")
+        reason = quote(str(exc.detail))
+        return RedirectResponse(f"{settings.FRONTEND_URL}/login?oauth=error&reason={reason}")
     except Exception as exc:
         import logging
         logging.getLogger(__name__).error("Google OAuth callback error: %s", exc)
