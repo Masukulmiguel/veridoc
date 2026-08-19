@@ -1,4 +1,4 @@
-# VeriDoc — Confiança Digital
+# VeriDoc  Confiança Digital
 
 <p align="center">
   <img src="public/logotipo.png" alt="Logotipo VeriDoc" width="420">
@@ -13,11 +13,11 @@ apenas o código.
 
 - **Registo de instituições** com autenticação por palavra-passe (PBKDF2) ou **Google OAuth**.
 - **Gestão de utilizadores** com RBAC (`ADMIN`, `ISSUER`, `VIEWER`) validado no backend.
-- **Emissão de documentos** — o conteúdo é serializado de forma canónica, é calculado o hash
+- **Emissão de documentos**  o conteúdo é serializado de forma canónica, é calculado o hash
   SHA-256 e o hash é assinado com RSA-2048 (a **chave privada nunca sai do servidor**).
 - **QR Code e PDF** gerados no servidor; o QR contém apenas a URL de validação
   `https://veridoc.ao/verificar/{código}`.
-- **Validação pública** — recomputa o hash, verifica a assinatura, trata estados
+- **Validação pública**  recomputa o hash, verifica a assinatura, trata estados
   `VALID | REVOKED | EXPIRED | INVALID | PENDING` e regista cada validação.
 - **Revogação** de documentos com motivo.
 - **Auditoria** completa de todas as ações (`USER_CREATED`, `LOGIN`, `DOCUMENT_CREATED`,
