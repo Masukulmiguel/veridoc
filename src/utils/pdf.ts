@@ -67,17 +67,26 @@ export async function buildDocumentPdf(
     } catch { /* skip */ }
   }
 
-  let y = H - 55
+  let y = 45
 
   const veridocLogoDataUrl = await fetchImageAsDataUrl('/logotipo.png')
   if (veridocLogoDataUrl) {
     try {
       const logoImg = await dataUrlToImage(veridocLogoDataUrl)
-      pdf.addImage(logoImg, 'PNG', ML, y - 38, 110, 38)
+      pdf.addImage(logoImg, 'PNG', ML, y, 110, 38)
     } catch { /* skip */ }
   }
 
-  let qrY = y - 38
+  if (institutionLogoDataUrl) {
+    try {
+      const instImg = await dataUrlToImage(institutionLogoDataUrl)
+      pdf.addImage(instImg, 'PNG', MR - 110, y, 110, 38)
+    } catch { /* skip */ }
+  }
+
+  const qrSize = 62
+  const qrX = MR - qrSize
+  const qrY = y + 48
   try {
     const qrRes = await api.get(`/documents/${doc.id}/qrcode`, { responseType: 'blob' })
     if (qrRes.data) {
@@ -87,8 +96,6 @@ export async function buildDocumentPdf(
         reader.readAsDataURL(qrRes.data)
       })
       const qrImg = await dataUrlToImage(qrDataUrl)
-      const qrSize = 62
-      const qrX = MR - qrSize
       pdf.addImage(qrImg, 'PNG', qrX, qrY, qrSize, qrSize)
       pdf.setFont('helvetica', 'normal')
       pdf.setFontSize(6)
@@ -97,18 +104,10 @@ export async function buildDocumentPdf(
     }
   } catch { /* skip QR */ }
 
-  if (institutionLogoDataUrl) {
-    try {
-      const instImg = await dataUrlToImage(institutionLogoDataUrl)
-      const instMaxW = 110
-      const instMaxH = 38
-      pdf.addImage(instImg, 'PNG', MR - instMaxW, y - 38, instMaxW, instMaxH)
-    } catch { /* skip */ }
-  }
+  y = y + 48 + qrSize + 22
 
-  drawLine(pdf, ML, y - 48, MR, y - 48, lineR, lineG, lineB, 0.5)
-
-  y = y - 68
+  drawLine(pdf, ML, y, MR, y, lineR, lineG, lineB, 0.5)
+  y += 24
 
   pdf.setFont('helvetica', 'bold')
   pdf.setFontSize(20)
@@ -120,10 +119,10 @@ export async function buildDocumentPdf(
   pdf.setFontSize(8)
   pdf.setTextColor(lightGreyR, lightGreyG, lightGreyB)
   pdf.text('Documento digital verificavel', CX, y, { align: 'center' })
-  y += 18
+  y += 20
 
   drawLine(pdf, ML + CW * 0.35, y, MR - CW * 0.35, y, lineR, lineG, lineB, 0.3)
-  y += 20
+  y += 22
 
   pdf.setFont('helvetica', 'normal')
   pdf.setFontSize(9)
@@ -135,13 +134,13 @@ export async function buildDocumentPdf(
   pdf.setFontSize(12)
   pdf.setTextColor(darkR, darkG, darkB)
   pdf.text(doc.institution.name, CX, y, { align: 'center' })
-  y += 28
+  y += 30
 
   pdf.setFont('helvetica', 'normal')
   pdf.setFontSize(9)
   pdf.setTextColor(greyR, greyG, greyB)
   pdf.text('Certifica-se que', CX, y, { align: 'center' })
-  y += 22
+  y += 24
 
   pdf.setFont('helvetica', 'bold')
   pdf.setFontSize(22)
@@ -150,7 +149,7 @@ export async function buildDocumentPdf(
   y += 10
 
   drawLine(pdf, CX - 80, y, CX + 80, y, navyR, navyG, navyB, 0.6)
-  y += 30
+  y += 28
 
   drawLine(pdf, ML, y, MR, y, lineR, lineG, lineB, 0.5)
   y += 20
@@ -159,7 +158,7 @@ export async function buildDocumentPdf(
   pdf.setFontSize(9)
   pdf.setTextColor(navyR, navyG, navyB)
   pdf.text('INFORMACOES DO DOCUMENTO', ML, y)
-  y += 18
+  y += 16
 
   const colLabel = ML
   const colValue = ML + 155
@@ -186,7 +185,6 @@ export async function buildDocumentPdf(
   }
 
   y += 8
-
   drawLine(pdf, ML, y, MR, y, lineR, lineG, lineB, 0.5)
   y += 18
 
@@ -266,17 +264,13 @@ export async function buildDocumentPdf(
   pdf.setTextColor(darkR, darkG, darkB)
   pdf.text(fullUrl, colValue, y)
 
-  y = H - 55
-
-  drawLine(pdf, ML, y, MR, y, lineR, lineG, lineB, 0.5)
-  y -= 14
-
+  const footerY = H - 40
+  drawLine(pdf, ML, footerY - 10, MR, footerY - 10, lineR, lineG, lineB, 0.5)
   pdf.setFont('helvetica', 'normal')
   pdf.setFontSize(6.5)
   pdf.setTextColor(lightGreyR, lightGreyG, lightGreyB)
-  pdf.text('VeriDoc — Plataforma Oficial de Documentos Digitais da Republica de Angola', CX, y, { align: 'center' })
-  y -= 10
-  pdf.text('Emitido em ' + formatDate(doc.issuedAt) + ' | Verificado automaticamente', CX, y, { align: 'center' })
+  pdf.text('VeriDoc \u2014 Plataforma Oficial de Documentos Digitais da Republica de Angola', CX, footerY + 2, { align: 'center' })
+  pdf.text('Emitido em ' + formatDate(doc.issuedAt) + ' | Verificado automaticamente', CX, footerY + 12, { align: 'center' })
 
   return pdf.output('blob')
 }
