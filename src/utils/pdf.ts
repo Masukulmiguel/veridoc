@@ -994,7 +994,7 @@ export async function buildDocumentPdf(
 
   pdf.setLineWidth(0.5)
 
-  pdf.roundRect(
+  pdf.roundedRect(
     MARGIN_LEFT,
     y - 9,
     CONTENT_WIDTH,
