@@ -195,7 +195,7 @@ function drawStatus(
 
   pdf.setLineWidth(0.6)
 
-  pdf.roundRect(
+  pdf.roundedRect(
     x,
     y - 11,
     width,
