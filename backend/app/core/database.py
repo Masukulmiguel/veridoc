@@ -4,8 +4,6 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from app.core.config import settings
 
 _db_url = settings.DATABASE_URL
-if _db_url.startswith("postgresql://"):
-    _db_url = "postgresql+psycopg://" + _db_url[len("postgresql://"):]
 
 _connect_args: dict = {}
 if _db_url.startswith("sqlite"):
