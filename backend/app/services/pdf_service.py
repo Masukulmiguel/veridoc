@@ -218,8 +218,10 @@ def generate_document_pdf(
     qr_size = 65
     qr_x = MR - qr_size
     try:
+        from reportlab.lib.utils import ImageReader
         qr_buf = BytesIO(qr_png)
-        c.drawImage(qr_buf, qr_x, y - 2, width=qr_size, height=qr_size,
+        qr_img = ImageReader(qr_buf)
+        c.drawImage(qr_img, qr_x, y - 2, width=qr_size, height=qr_size,
                     preserveAspectRatio=True, anchor="ne")
 
         c.setFont(_FN, 6.5)
@@ -228,8 +230,9 @@ def generate_document_pdf(
         c.drawRightString(qr_x - 8, y - 48, u"deste documento")
 
         _draw_checkmark_circle(c, qr_x + qr_size / 2, y - qr_size - 12, 7)
-    except Exception:
-        pass
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error("QR Code draw error: %s", e)
 
     y = y - qr_size - 55
 
