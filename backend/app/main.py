@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
-from app.api.routes import audit, auth, dashboard, documents, institutions, users, verification
+from app.api.routes import audit, auth, dashboard, documents, institutions, plans, users, verification
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.core.limiter import limiter
@@ -112,6 +112,7 @@ def health() -> dict:
 app.include_router(auth.router, prefix=settings.API_PREFIX)
 app.include_router(users.router, prefix=settings.API_PREFIX)
 app.include_router(institutions.router, prefix=settings.API_PREFIX)
+app.include_router(plans.router, prefix=settings.API_PREFIX)
 app.include_router(documents.router, prefix=settings.API_PREFIX)
 app.include_router(dashboard.router, prefix=settings.API_PREFIX)
 app.include_router(verification.router, prefix=settings.API_PREFIX)

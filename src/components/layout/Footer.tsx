@@ -3,7 +3,10 @@ import { ShieldCheck } from 'lucide-react'
 import { Logo } from './Logo'
 
 const SECTIONS = [
-  { title: 'Plataforma', links: [{ label: 'Validar documento', to: '/verificar' }] },
+  { title: 'Plataforma', links: [
+    { label: 'Validar documento', to: '/verificar' },
+    { label: 'Precos', to: '/precificacao' },
+  ] },
   {
     title: 'Acesso',
     links: [
@@ -14,7 +17,7 @@ const SECTIONS = [
   {
     title: 'Legal',
     links: [
-      { label: 'Política de Privacidade', to: '/privacidade' },
+      { label: 'Politica de Privacidade', to: '/privacidade' },
       { label: 'Termos de Uso', to: '/termos' },
     ],
   },

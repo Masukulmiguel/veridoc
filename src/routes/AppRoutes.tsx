@@ -11,6 +11,7 @@ const Register = lazy(() => import('@/pages/Register'))
 const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'))
 const VerifyDocument = lazy(() => import('@/pages/VerifyDocument'))
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'))
+const Pricing = lazy(() => import('@/pages/Pricing'))
 const TermsOfService = lazy(() => import('@/pages/TermsOfService'))
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const Documents = lazy(() => import('@/pages/Documents'))
@@ -49,6 +50,7 @@ export default function AppRoutes() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/recuperar-palavra-passe" element={<ForgotPassword />} />
+          <Route path="/precificacao" element={<Pricing />} />
           <Route path="/privacidade" element={<PrivacyPolicy />} />
           <Route path="/termos" element={<TermsOfService />} />
         </Route>

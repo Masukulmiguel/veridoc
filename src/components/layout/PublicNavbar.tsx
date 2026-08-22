@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 const NAV_LINKS = [
   { label: 'Como funciona', href: '/#como-funciona' },
   { label: 'Benefícios', href: '/#beneficios' },
+  { label: 'Precos', href: '/precificacao' },
   { label: 'Validar', href: '/verificar' },
   { label: 'Para instituições', href: '/#instituicoes' },
 ]

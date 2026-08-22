@@ -1,4 +1,5 @@
 export type InstitutionStatus = 'ACTIVE' | 'SUSPENDED' | 'PENDING'
+export type PlanId = 'starter' | 'professional' | 'enterprise'
 
 export interface Institution {
   id: string
@@ -12,6 +13,8 @@ export interface Institution {
   website: string | null
   logo: string | null
   status: InstitutionStatus
+  plan: PlanId
+  planActivatedAt: string | null
   createdAt: string
   updatedAt: string
 }

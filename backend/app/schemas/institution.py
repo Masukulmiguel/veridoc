@@ -17,6 +17,8 @@ class InstitutionOut(BaseModel):
     website: str | None
     logo: str | None
     status: str
+    plan: str
+    plan_activated_at: datetime | None
     created_at: datetime
 
 
